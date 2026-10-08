@@ -1,0 +1,2544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="only light">
+<meta name="theme-color" content="#f3eadc">
+<meta name="description" content="A small walk. A camera. A few things worth noticing.">
+<title>The Photo Walk</title>
+<style>
+  :root {
+    --parchment: #f3eadc;
+    --cream: #fbf7ef;
+    --ink: #2a2622;
+    --ink-soft: #5e564c;
+    --line: rgba(42, 38, 34, 0.16);
+    --ink-soft: color-mix(in srgb, var(--ink) 58%, var(--parchment));
+    --line: color-mix(in srgb, var(--ink) 16%, transparent);
+    --sage: #6d7c66;
+    --moss: #3e4f3c;
+    --rust: #9c5842;
+    --stone: #cbb89a;
+    --water: #6f8b98;
+    --shadow: 0 14px 34px rgba(42, 38, 34, 0.08);
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+    --sans: "Avenir Next", Avenir, "Segoe UI", "Helvetica Neue", Helvetica, sans-serif;
+    --hand: "Bradley Hand", "Segoe Script", "Apple Chancery", "Snell Roundhand", cursive;
+    --page: 800px;
+    --text: 40rem;
+    --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    color: var(--ink);
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(255, 250, 242, 0.85), transparent 58%),
+      var(--parchment);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    touch-action: manipulation;
+  }
+
+  body.is-modal { overflow: hidden; }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.045;
+    background-image: var(--noise);
+    background-size: 180px 180px;
+    mix-blend-mode: multiply;
+    z-index: 0;
+  }
+
+  .utility, main, .skip { position: relative; z-index: 1; }
+
+  .utility {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    background: var(--parchment);
+    border-bottom: 1px solid transparent;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 52px;
+    padding: 4px 0;
+  }
+
+  .wrap {
+    width: min(var(--page), calc(100% - 28px));
+    margin-inline: auto;
+  }
+
+  .roll, .count, .util-btn, .eyebrow, .scene-head h1, .scene-head p, .capture-head h1, .capture-head p, .kicker, .trait, .mat-foot, .ph-meta, .lb-count {
+    font-family: var(--sans);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .roll, .count {
+    margin: 0;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .dots {
+    display: flex;
+    gap: 4px;
+  }
+
+  .dots span {
+    width: 9px;
+    height: 13px;
+    border: 1px solid rgba(42, 38, 34, 0.32);
+    border-color: color-mix(in srgb, var(--ink) 32%, transparent);
+    border-radius: 1px;
+    background: transparent;
+  }
+
+  .dots span.is-on {
+    background: var(--moss);
+    border-color: var(--moss);
+  }
+
+  button, .skip {
+    font: inherit;
+    color: inherit;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(62, 79, 60, 0.14);
+  }
+
+  .util-btn {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 10px 2px;
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+
+  .util-btn[aria-pressed="true"] { color: var(--moss); }
+
+  .skip {
+    position: absolute;
+    left: 12px;
+    top: -48px;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 8px 12px;
+    z-index: 6;
+    text-decoration: none;
+  }
+
+  .skip:focus { top: 10px; }
+
+  :focus { outline: none; }
+
+  :focus-visible {
+    outline: 2px solid var(--moss);
+    outline-offset: 3px;
+  }
+
+  @supports not selector(:focus-visible) {
+    :focus {
+      outline: 2px solid var(--moss);
+      outline-offset: 3px;
+    }
+  }
+
+  [hidden] { display: none !important; }
+
+  main {
+    padding-bottom: calc(36px + env(safe-area-inset-bottom));
+  }
+
+  .title-screen {
+    min-height: calc(100vh - 64px);
+    min-height: calc(100dvh - 64px);
+    display: grid;
+    align-content: safe center;
+    padding: 18px 0 42px;
+    text-align: center;
+  }
+
+  .title-copy {
+    width: min(100%, 36rem);
+    margin: 18px auto 0;
+  }
+
+  h1.game-title {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(46px, 9vw, 76px);
+    letter-spacing: -0.03em;
+    line-height: 0.92;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    margin: 16px auto 0;
+    max-width: 22em;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(18px, 2.4vw, 22px);
+    line-height: 1.45;
+    color: var(--ink);
+  }
+
+  .whisper {
+    margin: 16px 0 0;
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 16px;
+  }
+
+  .scene, .capture, .album, .title-screen {
+    animation: rise 0.55s ease both;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .scene-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin: 22px 0 10px;
+  }
+
+  .scene-head h1, .capture-head h1 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .scene-head p, .capture-head p {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .print, .mat, .photo-card, .lb-card {
+    background: var(--cream);
+    box-shadow: var(--shadow);
+  }
+
+  .print { padding: 10px; }
+
+  .art-slot { position: relative; background: #d9d0c2; }
+
+  .art-slot .art { display: block; width: 100%; height: auto; }
+
+  .art-slot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.14;
+    mix-blend-mode: multiply;
+    background-image: var(--noise);
+    background-size: 160px 160px;
+  }
+
+  .prose {
+    max-width: var(--text);
+    margin-top: 22px;
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    line-height: 1.62;
+  }
+
+  .prose p { margin: 0; }
+
+  .prose p + p { margin-top: 0.85em; }
+
+  .choices {
+    max-width: var(--text);
+    display: grid;
+    gap: 8px;
+    margin-top: 22px;
+  }
+
+  .choice, .btn, .photo-card, .text-btn, .icon-btn {
+    cursor: pointer;
+  }
+
+  .choice {
+    appearance: none;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-left-width: 3px;
+    border-left-color: transparent;
+    border-radius: 2px;
+    min-height: 52px;
+    padding: 14px 16px;
+    font-family: var(--sans);
+    font-size: 16.5px;
+    line-height: 1.35;
+    color: var(--ink);
+  }
+
+  .choice:hover,
+  .choice:focus-visible {
+    background: rgba(255, 252, 246, 0.72);
+    border-color: rgba(42, 38, 34, 0.28);
+    border-left-color: var(--moss);
+  }
+
+  .choice:active { background: rgba(62, 79, 60, 0.06); }
+
+  .btn {
+    appearance: none;
+    border: 0;
+    background: var(--moss);
+    color: #f6f1e6;
+    min-height: 52px;
+    padding: 14px 22px;
+    border-radius: 2px;
+    letter-spacing: 0.03em;
+    font-size: 16px;
+  }
+
+  .btn:hover { background: #314032; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+
+  .btn-ghost:hover { background: rgba(255, 252, 246, 0.75); }
+
+  .title-actions { margin-top: 26px; }
+
+  .capture { padding-top: 8px; }
+
+  .capture-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 22px 0 12px;
+  }
+
+  .passage {
+    max-width: var(--text);
+    margin: 0 0 18px;
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    line-height: 1.62;
+  }
+
+  .finder {
+    position: relative;
+    background: #1a1714;
+    padding: 16px;
+    max-width: 100%;
+  }
+
+  .finder.is-developed {
+    background: transparent;
+    padding: 0;
+  }
+
+  .corners span {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 0 solid rgba(255, 248, 236, 0.92);
+    z-index: 3;
+  }
+
+  .corners span:nth-child(1) { top: 7px; left: 7px; border-top-width: 1.5px; border-left-width: 1.5px; }
+  .corners span:nth-child(2) { top: 7px; right: 7px; border-top-width: 1.5px; border-right-width: 1.5px; }
+  .corners span:nth-child(3) { bottom: 7px; left: 7px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+  .corners span:nth-child(4) { bottom: 7px; right: 7px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+  .finder.is-developed .corners { opacity: 0; }
+
+  .shutter {
+    position: absolute;
+    inset: 0;
+    background: #14110e;
+    transform: scaleY(0);
+    transform-origin: top center;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .finder.is-shutter .shutter { animation: shutterBlink 520ms ease-in-out; }
+
+  @keyframes shutterBlink {
+    0% { transform: scaleY(0); }
+    32% { transform: scaleY(1); }
+    58% { transform: scaleY(1); }
+    100% { transform: scaleY(0); }
+  }
+
+  .finder .mat {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .finder.is-developed .mat {
+    background: var(--cream);
+    padding: 10px 10px 8px;
+    box-shadow: var(--shadow);
+  }
+
+  .finder .art-slot {
+    filter: contrast(0.92) brightness(1.65) saturate(0.2);
+    transition: filter 1s ease;
+  }
+
+  .finder.is-developed .art-slot { filter: none; }
+
+  .mat-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 2px 2px;
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+
+  .capture-copy {
+    max-width: var(--text);
+    margin-top: 18px;
+  }
+
+  .kicker {
+    min-height: 1.2em;
+    margin: 0 0 6px;
+    font-size: 11px;
+    color: var(--moss);
+  }
+
+  .capture-copy h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(30px, 5vw, 42px);
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    overflow-wrap: break-word;
+  }
+
+  .capture-caption {
+    margin: 10px 0 0;
+    max-width: 36em;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1.05rem;
+    line-height: 1.5;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  .capture.is-ready .reveal {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .capture-copy .btn { margin-top: 18px; }
+
+  .album { padding-top: 18px; }
+
+  .album-kicker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .eyebrow {
+    margin: 0;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  .icon-btn {
+    appearance: none;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: var(--ink-soft);
+    padding: 0;
+  }
+
+  .icon-btn svg { width: 22px; height: 16px; display: block; }
+
+  .icon-btn.is-tapped { animation: nod 0.35s ease; }
+
+  @keyframes nod {
+    0% { transform: rotate(0deg); }
+    40% { transform: rotate(-10deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  .album h1, .lb-card h2 {
+    margin: 6px 0 0;
+    font-family: var(--serif);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+  }
+
+  .album h1 { font-size: clamp(44px, 8vw, 68px); }
+
+  .secret-slot { min-height: 0; }
+
+  .secret-line {
+    margin: 14px 0 0;
+    font-family: var(--hand);
+    font-size: 1.35rem;
+    line-height: 1.35;
+    color: #3d342c;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 22px;
+    padding: 4px;
+  }
+
+  .photo-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    border-radius: 1px;
+    padding: 10px 10px 14px;
+    color: inherit;
+    transform: rotate(var(--tilt));
+  }
+
+  .photo-card:hover, .photo-card:focus-visible {
+    box-shadow: 0 18px 38px rgba(42, 38, 34, 0.12);
+  }
+
+  #view-title, #passage, #lb-title { scroll-margin-top: 76px; }
+
+  .ph-title {
+    display: block;
+    margin-top: 10px;
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    overflow-wrap: break-word;
+  }
+
+  .ph-meta, .lb-meta {
+    display: block;
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--ink-soft);
+    letter-spacing: 0.12em;
+  }
+
+  .ph-caption, .lb-caption {
+    display: block;
+    margin-top: 8px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 1rem;
+    line-height: 1.45;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    overflow-wrap: break-word;
+  }
+
+  .reflection {
+    max-width: 38rem;
+    margin: 36px auto 0;
+    text-align: center;
+  }
+
+  .reflection p {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 1.12rem;
+    line-height: 1.6;
+  }
+
+  .reflection p + p { margin-top: 0.9em; }
+
+  .trait { font-size: 12px; color: var(--moss); }
+
+  .landing {
+    font-style: italic;
+    font-size: 1.4rem !important;
+    margin-top: 1.15rem !important;
+  }
+
+  .rule {
+    width: 42px;
+    height: 1px;
+    margin: 32px auto;
+    border: 0;
+    background: var(--line);
+  }
+
+  .note {
+    max-width: 34rem;
+    margin: 0 auto;
+    background: #fbf6ec;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    padding: 1.35rem 1.25rem 1.15rem;
+    transform: rotate(-0.35deg);
+  }
+
+  .note p {
+    margin: 0;
+    font-family: var(--hand);
+    font-size: clamp(1.25rem, 3vw, 1.55rem);
+    line-height: 1.4;
+    color: #3a322b;
+    overflow-wrap: break-word;
+  }
+
+  .note p + p { margin-top: 0.75em; }
+
+  .note .for { margin-bottom: 0.15em; }
+
+  .note .sign { margin-top: 0.9em; }
+
+  .end-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+  }
+
+  .end-actions .btn { min-width: min(100%, 240px); }
+
+  .poster-slot { margin-bottom: 8px; }
+
+  #lightbox {
+    border: 0;
+    padding: 0;
+    margin: auto;
+    background: transparent;
+    width: min(640px, calc(100% - 24px));
+    max-width: calc(100% - 24px);
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+    box-shadow: none;
+  }
+
+  #lightbox::backdrop { background: rgba(28, 24, 20, 0.78); }
+
+  .lb-card {
+    padding: 12px 12px 18px;
+    position: relative;
+  }
+
+  .lb-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .lb-count {
+    margin: 0;
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+
+  .text-btn {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    min-height: 44px;
+    padding: 8px 4px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .lb-card h2 {
+    margin-top: 12px;
+    font-size: clamp(28px, 5vw, 40px);
+  }
+
+  .lb-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .text-btn:disabled { opacity: 0.35; cursor: default; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .leaf { animation: sway 7.5s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
+  .cloud { animation: drift 46s linear infinite; }
+  .fall { animation: trickle 2.8s ease-in-out infinite; }
+  .reflection { animation: shimmer 5.5s ease-in-out infinite; }
+  .bee { animation: buzz 7s ease-in-out infinite; }
+  .dapple { animation: glow 6s ease-in-out infinite; }
+
+  @keyframes sway {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2.4deg); }
+  }
+
+  @keyframes drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(36px); }
+  }
+
+  @keyframes trickle {
+    0%, 100% { opacity: 0.72; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.38; }
+    50% { opacity: 0.62; }
+  }
+
+  @keyframes buzz {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(7px, -5px); }
+  }
+
+  @keyframes glow {
+    0%, 100% { opacity: 0.18; }
+    50% { opacity: 0.38; }
+  }
+
+  ::selection { background: #e4d3b4; color: var(--ink); }
+
+  @media (min-width: 720px) {
+    .prose, .passage { font-size: 1.15rem; }
+    .grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid .photo-card:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+      width: min(100%, 430px);
+      justify-self: center;
+    }
+  }
+
+  @media (max-width: 390px) {
+    .dots { display: none; }
+    .wrap { width: min(var(--page), calc(100% - 22px)); }
+    .photo-card, .note { transform: none; }
+  }
+
+  @media (max-width: 360px) {
+    .roll, .count, .util-btn { letter-spacing: 0.06em; }
+    .top-actions { gap: 6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .photo-card, .note, .reveal { transform: none !important; }
+  }
+</style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to the walk</a>
+  <header class="utility">
+    <div class="wrap bar">
+      <p class="roll" id="rollLabel">Roll 01</p>
+      <div class="top-actions">
+        <div class="top-actions" id="progressCluster">
+          <p class="count" id="countLabel">0 / 5 <span class="sr-only">photographs</span></p>
+          <div class="dots" id="dots" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <button type="button" class="util-btn" id="muteBtn" data-action="mute" aria-pressed="false">Sound off</button>
+      </div>
+    </div>
+  </header>
+  <main id="main" class="wrap" tabindex="-1"></main>
+  <dialog id="lightbox" aria-label="Photograph"></dialog>
+  <noscript>
+    <p class="wrap prose">The Photo Walk needs JavaScript to open. It is still just the one file.</p>
+  </noscript>
+
+<script>
+/* ============================================================
+   CONFIG
+   Edit this object to personalize the walk.
+   Nothing else needs to change.
+
+   recipientName   Her name. Leave HER_NAME (or blank) to omit it.
+   senderName      Your name. Leave YOUR_NAME (or blank) to omit the signature.
+   finalMessage    The note at the end. A blank line starts a new paragraph.
+                   You can write {name} and {sender} inside it if you want.
+   showPersonalMessage   false hides the note.
+   secretMessage   Appears only if the little camera on the last page
+                   is tapped three times. Not required to finish.
+   colors          Interface only: paper, ink, buttons. The pictures
+                   keep their own paints.
+   ============================================================ */
+const CONFIG = {
+  title: "The Photo Walk",
+  recipientName: "HER_NAME",
+  senderName: "YOUR_NAME",
+  showPersonalMessage: true,
+  finalMessage: "I know you haven't been getting out with your camera as much lately, so I thought I'd give you a little photo walk of your own.\n\nNo particular reason. I just thought you'd like it.",
+  secretMessage: "P.S. You should probably go take some photographs again sometime.",
+  colors: {
+    parchment: "#f3eadc",
+    cream: "#fbf7ef",
+    ink: "#2a2622",
+    sage: "#6d7c66",
+    moss: "#3e4f3c",
+    rust: "#9c5842",
+    stone: "#cbb89a",
+    water: "#6f8b98"
+  }
+};
+
+/* ============================================================
+   GAME DATA
+   ============================================================ */
+const SCENES = [
+  {
+    id: "path",
+    title: "The Path",
+    time: "Late afternoon",
+    art: "path",
+    alt: "A narrow path under trees, with late light coming through in pieces.",
+    text: "The path is narrow and a little uneven, the kind that collects leaves in its dips. Light comes through the trees in pieces. Somewhere ahead, water is moving, though not loudly enough to make you hurry.",
+    textAlt: "You know an afternoon like this. The path collects leaves where feet have missed it. Light arrives in pieces. Somewhere, water is moving, and it can wait.",
+    choices: [
+      {
+        id: "water",
+        label: "Follow the sound of water",
+        traits: { adventure: 1, nature: 1, curiosity: 1 },
+        summary: "followed the sound of water",
+        passage: "You keep the sound on your left, or where you think your left is. The path bends toward it without quite arriving. A puddle holds a scrap of sky. You lift the camera before the light changes its mind.",
+        photo: {
+          title: "First Light",
+          location: "The Path",
+          time: "Late afternoon",
+          caption: "The path had not decided yet whether it was going somewhere.",
+          art: "path-water",
+          alt: "A path bending toward a thin stream, with a puddle holding a piece of sky."
+        }
+      },
+      {
+        id: "green",
+        label: "Take the greener path",
+        traits: { nature: 2, curiosity: 1 },
+        summary: "took the greener path",
+        passage: "The other way is narrower, and the green closes over it. Ferns brush your sleeve. You stop where the leaves are thickest, because the light there is doing something specific, and it will not do it for long.",
+        photo: {
+          title: "Under the Leaves",
+          location: "The Path",
+          time: "Late afternoon",
+          caption: "Most of the color was green. The rest was patience.",
+          art: "path-green",
+          alt: "A narrow path almost covered by thick green leaves and ferns."
+        }
+      },
+      {
+        id: "small",
+        label: "Stop for something small",
+        traits: { detail: 2, stillness: 1 },
+        summary: "stopped for something small",
+        passage: "A stone in the verge has moss on one side only, and a feather caught against it. You crouch. The walk can wait. The light on the feather cannot.",
+        photo: {
+          title: "Close To",
+          location: "The Path",
+          time: "Late afternoon",
+          caption: "You nearly walked past it. That was almost the photograph.",
+          art: "path-small",
+          alt: "A close view of a stone with moss on one side and a pale feather against it."
+        }
+      }
+    ]
+  },
+  {
+    id: "garden",
+    title: "The Garden",
+    time: "Afternoon",
+    art: "garden",
+    alt: "An untidy garden behind an uneven stone wall, with flowers, moss, and a bee.",
+    text: "A low wall of uneven stone holds back a garden that has not been tidied for anyone. One flower bends hard toward the light. Fallen petals sit in the cracks. Moss fills the places the stones forgot. A bee works a bloom and does not look up.",
+    textAlt: "The garden is still a little unruly. The bent flower is still bending. Petals in the cracks, moss in the gaps, a bee minding its work.",
+    choices: [
+      {
+        id: "flower",
+        label: "Photograph one flower",
+        traits: { detail: 2, nature: 1 },
+        summary: "chose a single flower",
+        passage: "You choose the one bending toward the light, since it is already halfway to a composition. A drop of water sits in a petal and does not fall. You wait until the bee has moved on. It feels like manners.",
+        photo: {
+          title: "A Little Bit of Red",
+          location: "The Garden",
+          time: "Afternoon",
+          caption: "One flower, doing what it could with the light.",
+          art: "garden-flower",
+          alt: "A single rust-colored flower bending toward the light, with a drop of water in one petal."
+        }
+      },
+      {
+        id: "garden",
+        label: "Photograph the whole garden",
+        traits: { nature: 2, curiosity: 1 },
+        summary: "kept the whole garden",
+        passage: "You step back until the wall, the moss, and the uneven stones all agree to fit. The garden looks less arranged from here, which is closer to the truth. A petal crosses the frame. You let it.",
+        photo: {
+          title: "The Quiet Garden",
+          location: "The Garden",
+          time: "Afternoon",
+          caption: "Nothing in the garden was performing.",
+          art: "garden-wide",
+          alt: "A wide view of a slightly untidy garden between old stone walls."
+        }
+      },
+      {
+        id: "detail",
+        label: "Look for a smaller detail",
+        traits: { curiosity: 2, detail: 1 },
+        summary: "went looking for a smaller detail",
+        passage: "You follow the bee, then lose it, then notice what it was circling: a flower growing sideways out of the wall, rooted in almost nothing. Water beads along the moss beneath it.",
+        photo: {
+          title: "Between the Leaves",
+          location: "The Garden",
+          time: "Afternoon",
+          caption: "The interesting part was that it had managed.",
+          art: "garden-detail",
+          alt: "A flower growing sideways from a crack in a stone wall, near moss and a bee."
+        }
+      }
+    ]
+  },
+  {
+    id: "water",
+    title: "The Water",
+    time: "Late afternoon",
+    art: "water",
+    alt: "A small waterfall between dark rocks, a reflecting pool, and a blue bicycle by the fence.",
+    text: "The sound has been ahead of you for a while. Here it is: a short fall between dark rocks, breaking into thin ribbons. The pool below holds the trees upside down. A blue bicycle leans against the fence, as if someone meant to come back for it.",
+    textAlt: "You hear it before you see it, again. A short fall, a dark pool, trees kept upside down in the water. The blue bicycle is still by the fence.",
+    choices: [
+      {
+        id: "fall",
+        label: "Photograph the waterfall",
+        traits: { nature: 2, adventure: 1 },
+        summary: "photographed the waterfall",
+        passage: "You find the place where the water separates into threads. The bicycle stays out of the frame, which feels polite. For a moment everything is moving except the camera, and then, briefly, except you.",
+        photo: {
+          title: "Where the Water Goes",
+          location: "The Water",
+          time: "Late afternoon",
+          caption: "For a moment, everything seemed to be moving except you.",
+          art: "water-fall",
+          alt: "Thin ribbons of water falling between dark rocks into a pool."
+        }
+      },
+      {
+        id: "silver",
+        label: "Photograph the reflections",
+        traits: { detail: 2, stillness: 1 },
+        summary: "kept the reflections",
+        passage: "The fall is lovely. The pool is stranger. Trees hang in it and shiver whenever a drop lands. You lower the camera until the real bank is gone and only the silver is left.",
+        photo: {
+          title: "Silver",
+          location: "The Water",
+          time: "Late afternoon",
+          caption: "The reflection was less accurate, and more interesting.",
+          art: "water-silver",
+          alt: "Trees and sky reflected in a dark pool, shivering where drops land."
+        }
+      },
+      {
+        id: "still",
+        label: "Put the camera down",
+        traits: { stillness: 3 },
+        quiet: true,
+        summary: "put the camera down beside the water",
+        passage: "You set the camera on the flat stone beside you and watch the fall do what it has been doing all day. When you pick it up again, you take one frame without quite deciding to. It is a little crooked. You keep it.",
+        photo: {
+          title: "Left as It Was",
+          location: "The Water",
+          time: "Late afternoon",
+          caption: "Not every good thing needs to be improved by keeping it.",
+          art: "water-still",
+          alt: "A slightly crooked, unplanned view of the small waterfall, the pool, and a blue bicycle."
+        }
+      }
+    ]
+  },
+  {
+    id: "street",
+    title: "The Street",
+    time: "Early evening",
+    art: "street",
+    alt: "A narrow street of honey-colored stone, with a green door, flowers, and a small café window.",
+    text: "The path turns into a narrow street of honey-colored stone. The buildings stand close, their windows slightly crooked in the way old windows are. A green door has been repainted, not quite perfectly. Flowers crowd a pot beside the step. At the corner, someone sits outside a small café with a book, and a cup they have stopped noticing.",
+    textAlt: "Warm stone again, close buildings, a door painted by a person rather than a plan. The café still has its one outside table. Someone is still reading.",
+    choices: [
+      {
+        id: "stone",
+        label: "Photograph the stone",
+        traits: { curiosity: 1, adventure: 1 },
+        summary: "stopped for the warm stone",
+        passage: "You frame a corner where the last sun has turned the stone honey-colored. One window sits slightly crooked in its frame. The street does not apologize for it.",
+        photo: {
+          title: "Warm Stone",
+          location: "The Street",
+          time: "Early evening",
+          caption: "The light had been saving itself for the buildings.",
+          art: "street-stone",
+          alt: "A close view of a honey-colored stone wall with one slightly crooked window."
+        }
+      },
+      {
+        id: "door",
+        label: "Photograph the doorway",
+        traits: { nature: 1, detail: 2 },
+        summary: "noticed the flowers by a door",
+        passage: "The green door, the pot of flowers, a scatter of soil on the step. You stand a little way off, so you are not in the middle of someone else's afternoon.",
+        photo: {
+          title: "By the Door",
+          location: "The Street",
+          time: "Early evening",
+          caption: "Soil on the step. Flowers in the pot. Enough.",
+          art: "street-door",
+          alt: "A worn green door with a pot of flowers and a little soil on the step."
+        }
+      },
+      {
+        id: "window",
+        label: "Photograph the café window",
+        traits: { stillness: 1, curiosity: 1, detail: 1 },
+        summary: "paused at a café window",
+        passage: "In the glass: a cup, an open book, and the shoulder of someone who is not performing being there. The street lays itself over them as a reflection. Two pictures, sharing a pane.",
+        photo: {
+          title: "Window Light",
+          location: "The Street",
+          time: "Early evening",
+          caption: "You did not need to know what they were reading.",
+          art: "street-window",
+          alt: "A café window with a cup, an open book, and the street reflected in the glass."
+        }
+      }
+    ]
+  },
+  {
+    id: "hill",
+    title: "The Hill",
+    time: "Evening",
+    art: "hill",
+    alt: "A low hill looking back over trees, a thin line of water, a garden, and honey-colored roofs.",
+    text: "The street thins into a lane, and the lane climbs onto a low hill. From here the walk has a shape: dark trees, a pale line of water, a patch of garden, honey-colored roofs. The light is cooling. It has not finished yet.",
+    textAlt: "Up the lane, the same hill. The roofs below have gone a deeper gold. The light is still in the middle of leaving.",
+    choices: [
+      {
+        id: "view",
+        label: "Photograph the whole view",
+        traits: { adventure: 1, nature: 1, curiosity: 1 },
+        summary: "took the long view from the hill",
+        passage: "You step back until the walk fits: trees, water, stone, sky. It looks smaller from here, and more complete. You take the picture before the light finishes changing.",
+        photo: {
+          title: "The Long View",
+          location: "The Hill",
+          time: "Evening",
+          caption: "From up here, the afternoon had a shape.",
+          art: "hill-view",
+          alt: "The whole walk seen from a hill: trees, water, garden, and stone roofs under a changing sky."
+        }
+      },
+      {
+        id: "sky",
+        label: "Photograph the changing sky",
+        traits: { detail: 1, stillness: 1, nature: 1 },
+        summary: "photographed the changing sky",
+        passage: "The land is lovely, but the sky is in the middle of becoming something else, and that will not wait. You tilt the camera until the hill is only a dark line along the bottom.",
+        photo: {
+          title: "The Light Changing",
+          location: "The Hill",
+          time: "Evening",
+          caption: "You looked up at the right minute. That was most of the work.",
+          art: "hill-sky",
+          alt: "A wide evening sky with the hill reduced to a dark line along the bottom."
+        }
+      },
+      {
+        id: "away",
+        label: "Put the camera away",
+        traits: { stillness: 3 },
+        quiet: true,
+        summary: "put the camera away and simply looked",
+        passage: "You cap the lens. The view does not object. You stay until the stone below goes from warm to gray-gold, and only then, turning to leave, you take one photograph over your shoulder. It is mostly sky.",
+        photo: {
+          title: "Over Your Shoulder",
+          location: "The Hill",
+          time: "Evening",
+          caption: "Some of the walk you kept. Some of it you let stay where it was.",
+          art: "hill-away",
+          alt: "An unplanned photograph taken over the shoulder, mostly evening sky above a tilted horizon."
+        }
+      }
+    ]
+  }
+];
+
+const CALLBACKS = {
+  garden: {
+    water: "The sound of the water thins, but it follows you in.",
+    green: "After all that green, the first flower looks almost loud.",
+    small: "You are still thinking about the feather. It makes you slower, which helps."
+  },
+  water: {
+    flower: "A petal has caught on your sleeve. You leave it.",
+    garden: "Your shoes are damp from the grass.",
+    detail: "You check the moss on the rocks before you look up at the fall."
+  },
+  street: {
+    fall: "The noise of the water fades behind the first buildings.",
+    silver: "You keep catching little skies in the windows and the wet stone.",
+    still: "The street seems especially quiet after the fall."
+  },
+  hill: {
+    stone: "The lane underfoot is the same warm stone as the street below.",
+    door: "You can still smell the flowers. It might only be the grass up here.",
+    window: "The café is a small square of light now, easy to miss."
+  }
+};
+
+const REFLECTIONS = {
+  detail: {
+    title: "The observer",
+    line: "You kept noticing the things that were easiest to miss."
+  },
+  explorer: {
+    title: "The explorer",
+    line: "You rarely took the obvious way. You kept finding the things most people would walk straight past."
+  },
+  nature: {
+    title: "The nature lover",
+    line: "Somehow, the walk kept ending up beside water, flowers, trees, and open sky."
+  },
+  stillness: {
+    title: "The still one",
+    line: "You did not seem particularly interested in rushing. Every now and then, you simply stopped and looked."
+  }
+};
+
+const COMBOS = {
+  "detail+explorer": {
+    title: "A careful wander",
+    line: "You left the direct path, and you paid attention while you did it. The small things kept up with you."
+  },
+  "detail+nature": {
+    title: "Close to living things",
+    line: "You were drawn toward green things, and then closer: a petal, a crack in the stone, light sitting in water."
+  },
+  "detail+stillness": {
+    title: "Unhurried, and precise",
+    line: "You noticed the little things, and you were just as willing to leave a moment unphotographed."
+  },
+  "explorer+nature": {
+    title: "Off toward the green",
+    line: "The longer way kept offering you water, leaves, and open sky. You usually accepted."
+  },
+  "explorer+stillness": {
+    title: "Wandering, then stopping",
+    line: "You took the less obvious way, and then, once or twice, you stopped entirely. Both seemed to suit you."
+  },
+  "nature+stillness": {
+    title: "Quiet, among living things",
+    line: "You stayed near the water and the flowers, and you did not rush them. Some of the walk you simply let happen."
+  }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  currentScene: 0,
+  photos: [],
+  traits: { curiosity: 0, nature: 0, detail: 0, stillness: 0, adventure: 0 },
+  choices: [],
+  walk: 1,
+  secretClicks: 0,
+  secretFound: false
+};
+
+let phase = "title";
+let heldUntil = 0;
+let captureReady = false;
+let recovering = false;
+let keyIsRepeating = false;
+let timers = [];
+let lightboxIndex = 0;
+const INPUT_HOLD = 520;
+
+/* ============================================================
+   DOM REFERENCES
+   ============================================================ */
+const dom = {
+  main: document.getElementById("main"),
+  roll: document.getElementById("rollLabel"),
+  count: document.getElementById("countLabel"),
+  progress: document.getElementById("progressCluster"),
+  dots: document.getElementById("dots"),
+  mute: document.getElementById("muteBtn"),
+  lightbox: document.getElementById("lightbox")
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function prefersReduced() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function later(fn, ms) {
+  const id = setTimeout(fn, ms);
+  timers.push(id);
+  return id;
+}
+
+function clearTimers() {
+  timers.forEach(clearTimeout);
+  timers = [];
+}
+
+function holdInput(ms) {
+  const until = Date.now() + ms;
+  if (until > heldUntil) heldUntil = until;
+}
+
+function inputOpen() {
+  return Date.now() >= heldUntil;
+}
+
+function escapeHtml(value) {
+  if (value == null) return "";
+  if (typeof value !== "string" && typeof value !== "number") return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function realName(value) {
+  const cleaned = String(value || "").trim();
+  const blocked = ["", "her_name", "your_name", "name", "recipient", "sender"];
+  if (blocked.indexOf(cleaned.toLowerCase()) !== -1) return "";
+  return cleaned;
+}
+
+function personalize(text) {
+  const name = realName(CONFIG.recipientName);
+  const sender = realName(CONFIG.senderName);
+  return String(text || "")
+    .replaceAll("{name}", name)
+    .replaceAll("{sender}", sender);
+}
+
+function joinList(items) {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return items[0] + " and " + items[1];
+  return items.slice(0, -1).join(", ") + ", and " + items[items.length - 1];
+}
+
+function plate(number) {
+  return "No. " + String(number).padStart(2, "0");
+}
+
+function clockFor(index) {
+  const extra = state.traits.stillness * 3;
+  const total = 16 * 60 + 8 + index * 17 + extra;
+  let hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  const suffix = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return hours + ":" + String(minutes).padStart(2, "0") + " " + suffix;
+}
+
+function sceneByIndex(index) {
+  return SCENES[index];
+}
+
+function choiceById(scene, id) {
+  return scene.choices.find(function (choice) { return choice.id === id; });
+}
+
+function applyTheme() {
+  const root = document.documentElement;
+  const colors = CONFIG.colors || {};
+  Object.keys(colors).forEach(function (key) {
+    const value = colors[key];
+    if (typeof value === "string" && value.trim()) {
+      root.style.setProperty("--" + key, value.trim());
+    }
+  });
+  document.title = CONFIG.title || "The Photo Walk";
+}
+
+function updateChrome() {
+  dom.roll.textContent = "Roll " + String(state.walk).padStart(2, "0");
+  const show = phase !== "title";
+  dom.progress.hidden = !show;
+  const noun = state.photos.length === 1 ? "photograph" : "photographs";
+  dom.count.innerHTML = state.photos.length + " / 5 <span class=\"sr-only\">" + noun + "</span>";
+  const marks = dom.dots.querySelectorAll("span");
+  marks.forEach(function (mark, index) {
+    mark.classList.toggle("is-on", index < state.photos.length);
+  });
+}
+
+function focusNode(id, visible) {
+  const node = document.getElementById(id);
+  if (!node) return;
+  try {
+    node.focus(visible ? { focusVisible: true } : undefined);
+  } catch (error) {
+    node.focus();
+  }
+}
+
+function currentSceneId() {
+  const scene = sceneByIndex(state.currentScene);
+  return scene && scene.id ? scene.id : "path";
+}
+
+function resetTraits() {
+  state.traits.curiosity = 0;
+  state.traits.nature = 0;
+  state.traits.detail = 0;
+  state.traits.stillness = 0;
+  state.traits.adventure = 0;
+}
+
+function setPageLocked(locked) {
+  document.body.classList.toggle("is-modal", locked);
+}
+
+function closeLightbox() {
+  if (dom.lightbox.open) dom.lightbox.close();
+  setPageLocked(false);
+}
+
+/* ============================================================
+   ILLUSTRATIONS
+   ============================================================ */
+let artSeq = 0;
+
+function skyDef(id, c1, c2, c3) {
+  return "<linearGradient id=\"" + id + "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">" +
+    "<stop offset=\"0%\" stop-color=\"" + c1 + "\"/>" +
+    "<stop offset=\"52%\" stop-color=\"" + c2 + "\"/>" +
+    "<stop offset=\"100%\" stop-color=\"" + c3 + "\"/></linearGradient>";
+}
+
+function vignetteDef(id) {
+  return "<radialGradient id=\"" + id + "\" cx=\"50%\" cy=\"45%\" r=\"75%\">" +
+    "<stop offset=\"58%\" stop-color=\"#2a2118\" stop-opacity=\"0\"/>" +
+    "<stop offset=\"100%\" stop-color=\"#2a2118\" stop-opacity=\"0.2\"/></radialGradient>";
+}
+
+function svgWrap(height, defs, body) {
+  const prefix = "a" + (++artSeq);
+  const vig = prefix + "-vig";
+  return "<svg class=\"art\" viewBox=\"0 0 600 " + height + "\" aria-hidden=\"true\">" +
+    "<defs>" + defs + vignetteDef(vig) + "</defs>" +
+    body +
+    "<rect width=\"600\" height=\"" + height + "\" fill=\"url(#" + vig + ")\"/>" +
+    "</svg>";
+}
+
+function sun(x, y, r, color) {
+  return "<circle cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + (r * 2.8) + "\" fill=\"" + color + "\" opacity=\"0.28\"/>" +
+    "<circle cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + r + "\" fill=\"" + color + "\"/>";
+}
+
+function cloud(x, y, s) {
+  return "<g transform=\"translate(" + x + " " + y + ")\"><g class=\"cloud\">" +
+    "<ellipse cx=\"0\" cy=\"0\" rx=\"" + (24 * s) + "\" ry=\"" + (8 * s) + "\" fill=\"#fffaf3\" opacity=\"0.55\"/>" +
+    "<ellipse cx=\"" + (16 * s) + "\" cy=\"" + (-4 * s) + "\" rx=\"" + (14 * s) + "\" ry=\"" + (8 * s) + "\" fill=\"#fffaf3\" opacity=\"0.48\"/>" +
+    "<ellipse cx=\"" + (-14 * s) + "\" cy=\"" + (-2 * s) + "\" rx=\"" + (12 * s) + "\" ry=\"" + (7 * s) + "\" fill=\"#fffaf3\" opacity=\"0.4\"/>" +
+    "</g></g>";
+}
+
+function bloom(cx, cy, size, petal, center, rot) {
+  const angles = [0, 72, 144, 216, 288];
+  const petals = angles.map(function (angle) {
+    return "<ellipse cx=\"0\" cy=\"" + (-size) + "\" rx=\"" + (size * 0.46).toFixed(1) + "\" ry=\"" + (size * 0.72).toFixed(1) + "\" fill=\"" + petal + "\" transform=\"rotate(" + angle + ")\"/>";
+  }).join("");
+  return "<g transform=\"translate(" + cx + " " + cy + ") rotate(" + (rot || 0) + ")\">" + petals +
+    "<circle r=\"" + (size * 0.32).toFixed(1) + "\" fill=\"" + center + "\"/></g>";
+}
+
+function stem(x1, y1, x2, y2, bend) {
+  const mx = (x1 + x2) / 2 + (bend || 0);
+  const my = (y1 + y2) / 2;
+  return "<path d=\"M" + x1 + " " + y1 + " Q " + mx + " " + my + " " + x2 + " " + y2 + "\" fill=\"none\" stroke=\"#4c5b43\" stroke-width=\"2\" stroke-linecap=\"round\"/>";
+}
+
+function leaf(x, y, rot, color) {
+  return "<g transform=\"translate(" + x + " " + y + ") rotate(" + rot + ")\"><path class=\"leaf\" d=\"M0 0 C 7 -14, 5 -28, 0 -40 C -5 -28, -7 -14, 0 0 Z\" fill=\"" + (color || "#5c6e52") + "\"/></g>";
+}
+
+function drop(x, y, r) {
+  return "<circle cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + r + "\" fill=\"#d7e6ea\"/>" +
+    "<circle cx=\"" + (x - r * 0.28) + "\" cy=\"" + (y - r * 0.3) + "\" r=\"" + (r * 0.28) + "\" fill=\"#fff\" opacity=\"0.85\"/>";
+}
+
+function bee(x, y) {
+  return "<g transform=\"translate(" + x + " " + y + ")\"><g class=\"bee\">" +
+    "<ellipse cx=\"-6\" cy=\"-5\" rx=\"5\" ry=\"2.3\" fill=\"#f7f4ea\" opacity=\"0.9\" transform=\"rotate(-28)\"/>" +
+    "<ellipse cx=\"6\" cy=\"-5\" rx=\"5\" ry=\"2.3\" fill=\"#f7f4ea\" opacity=\"0.9\" transform=\"rotate(28)\"/>" +
+    "<ellipse cx=\"0\" cy=\"0\" rx=\"8\" ry=\"4.4\" fill=\"#2c2824\"/>" +
+    "<path d=\"M-3.5 0 H3.5\" stroke=\"#f3e6c4\" stroke-width=\"1.3\"/>" +
+    "</g></g>";
+}
+
+function feather(x, y, rot) {
+  return "<g transform=\"translate(" + x + " " + y + ") rotate(" + rot + ")\">" +
+    "<path d=\"M0 0 C 7 -16, 11 -30, 2 -48 C 16 -30, 12 -12, 0 0 Z\" fill=\"#f6f1e6\"/>" +
+    "<path d=\"M1 -4 C 3 -20, 3 -34, 3 -44\" stroke=\"#c9b496\" stroke-width=\"0.8\" fill=\"none\"/>" +
+    "</g>";
+}
+
+function bicycle(x, y, scale) {
+  return "<g transform=\"translate(" + x + " " + y + ") scale(" + scale + ")\" fill=\"none\" stroke=\"#3e6274\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">" +
+    "<circle cx=\"0\" cy=\"0\" r=\"14\"/>" +
+    "<circle cx=\"38\" cy=\"0\" r=\"14\"/>" +
+    "<path d=\"M0 0 L16 -15 H30 L38 0\"/>" +
+    "<path d=\"M16 -15 V-23\"/>" +
+    "<path d=\"M10 -23 H22\"/>" +
+    "</g>";
+}
+
+function sash(x, y, w, h, frame, glass) {
+  const m = Math.max(3, Math.round(Math.min(w, h) * 0.08));
+  const innerW = w - m * 2;
+  const paneH = (h - m * 3) / 2;
+  return "<rect x=\"" + x + "\" y=\"" + y + "\" width=\"" + w + "\" height=\"" + h + "\" fill=\"" + frame + "\"/>" +
+    "<rect x=\"" + (x + m) + "\" y=\"" + (y + m) + "\" width=\"" + innerW + "\" height=\"" + paneH + "\" fill=\"" + glass + "\"/>" +
+    "<rect x=\"" + (x + m) + "\" y=\"" + (y + m * 2 + paneH) + "\" width=\"" + innerW + "\" height=\"" + paneH + "\" fill=\"" + glass + "\"/>" +
+    "<rect x=\"" + (x + w / 2 - m * 0.45) + "\" y=\"" + (y + m) + "\" width=\"" + (m * 0.9) + "\" height=\"" + (h - m * 2) + "\" fill=\"" + frame + "\"/>";
+}
+
+function canopy(items) {
+  return items.map(function (item) {
+    return "<ellipse cx=\"" + item[0] + "\" cy=\"" + item[1] + "\" rx=\"" + item[2] + "\" ry=\"" + item[3] + "\" fill=\"" + item[4] + "\"/>";
+  }).join("");
+}
+
+function falls(x, y, w, h, id) {
+  let markup = "<linearGradient id=\"" + id + "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">" +
+    "<stop offset=\"0%\" stop-color=\"#f7fbfb\" stop-opacity=\"0.95\"/>" +
+    "<stop offset=\"100%\" stop-color=\"#d5e4e8\" stop-opacity=\"0.12\"/></linearGradient>";
+  const count = 5;
+  for (let i = 0; i < count; i += 1) {
+    const strand = w / count;
+    markup += "<rect class=\"fall\" x=\"" + (x + i * strand) + "\" y=\"" + y + "\" width=\"" + (strand - 3) + "\" height=\"" + h + "\" rx=\"3\" fill=\"url(#" + id + ")\" style=\"animation-delay:" + (i * 0.25) + "s\"/>";
+  }
+  return markup;
+}
+
+function drawPoster() {
+  const id = "poster-sky-" + (++artSeq);
+  const body = sun(470, 58, 18, "#f6e2bc") +
+    cloud(80, 48, 1) +
+    cloud(240, 36, 0.8) +
+    "<path d=\"M0 150 Q 150 110 300 136 T 600 128 L 600 220 L 0 220 Z\" fill=\"#8ea088\"/>" +
+    "<path d=\"M0 168 Q 180 142 340 166 T 600 158 L 600 220 L 0 220 Z\" fill=\"#5d6e56\"/>" +
+    canopy([[70, 132, 46, 34, "#3e4f3c"], [130, 126, 34, 28, "#4d5e48"], [430, 124, 40, 30, "#c4a57a"], [490, 118, 36, 32, "#b8926a"], [540, 128, 30, 24, "#d4b48a"]]) +
+    "<path d=\"M250 150 C 270 170, 255 186, 285 198\" fill=\"none\" stroke=\"#d5e4e8\" stroke-width=\"3\"/>" +
+    "<path d=\"M210 220 C 250 188, 300 196, 330 168 C 360 196, 410 190, 450 220 Z\" fill=\"#e7dcc8\"/>";
+  return svgWrap(220, skyDef(id, "#f6e6cf", "#ead4b8", "#d5ddd8"), "<rect width=\"600\" height=\"220\" fill=\"url(#" + id + ")\"/>" + body);
+}
+
+function drawPath(mode) {
+  const id = "path-sky-" + mode + "-" + (++artSeq);
+  const greens = mode === "green";
+  const towardWater = mode === "water";
+  if (mode === "small") {
+    const blur = "path-blur-" + artSeq;
+    const defs = "<filter id=\"" + blur + "\"><feGaussianBlur stdDeviation=\"7\"/></filter>" +
+      skyDef(id, "#d5ddd4", "#c5d0c4", "#b7c4b4");
+    const back = "<g filter=\"url(#" + blur + ")\">" +
+      "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" +
+      canopy([[80, 80, 120, 80, "#7d9174"], [260, 60, 150, 90, "#9aaf90"], [480, 90, 140, 80, "#6d8264"], [160, 200, 160, 70, "#c9d3c2"], [430, 230, 150, 80, "#a8b9a4"]]) +
+      "</g>";
+    const front = "<ellipse cx=\"250\" cy=\"268\" rx=\"128\" ry=\"72\" fill=\"#cbb89a\"/>" +
+      "<ellipse cx=\"300\" cy=\"286\" rx=\"116\" ry=\"58\" fill=\"#b7a48a\"/>" +
+      "<ellipse cx=\"214\" cy=\"262\" rx=\"46\" ry=\"28\" fill=\"#6d7d5e\"/>" +
+      "<ellipse cx=\"186\" cy=\"278\" rx=\"28\" ry=\"16\" fill=\"#4e5d45\"/>" +
+      feather(250, 250, -18) +
+      leaf(360, 300, 20, "#5c6e52") +
+      "<path d=\"M390 250 C 396 220, 402 230, 398 206\" fill=\"none\" stroke=\"#3e4f3c\" stroke-width=\"2\"/>" +
+      drop(230, 248, 4);
+    return svgWrap(400, defs, back + front);
+  }
+
+  const sky = greens
+    ? ["#e7f0e4", "#d5e0d2", "#c5d1c6"]
+    : ["#f6e6cf", "#e7d3b6", "#c9d4d0"];
+  const path = towardWater
+    ? "M220 400 C 250 330, 200 300, 250 250 C 300 200, 360 190, 400 150 C 430 120, 455 130, 470 108 L 520 118 C 500 150, 470 160, 450 200 C 420 250, 470 280, 430 340 C 390 390, 360 370, 340 400 Z"
+    : "M235 400 C 265 330, 205 292, 255 242 C 305 192, 285 150, 325 112 L 378 104 C 350 156, 390 196, 338 252 C 286 308, 350 338, 330 400 Z";
+  const stream = towardWater
+    ? "<path d=\"M500 70 C 470 140, 530 180, 490 250 C 460 310, 520 340, 488 400 L 548 400 C 575 330, 520 300, 548 230 C 572 160, 530 120, 548 60 Z\" fill=\"#8eacb6\"/>" +
+      "<path d=\"M512 90 C 496 150, 534 190, 508 260\" fill=\"none\" stroke=\"#f4fafb\" stroke-width=\"3\" opacity=\"0.55\"/>" +
+      "<ellipse cx=\"300\" cy=\"332\" rx=\"34\" ry=\"12\" fill=\"#b7ccc8\"/>" +
+      "<ellipse cx=\"292\" cy=\"328\" rx=\"16\" ry=\"5\" fill=\"#f7f3ea\" opacity=\"0.65\"/>"
+    : "";
+  const extraGreen = greens
+    ? canopy([[300, 70, 260, 90, "#6d8264"], [120, 90, 150, 70, "#5d6e56"], [500, 80, 160, 74, "#587056"]]) +
+      leaf(150, 340, -10, "#3e4f3c") + leaf(180, 360, 16, "#4d5e48") + leaf(430, 350, 24, "#3e4f3c") + leaf(470, 330, -8, "#5c6e52") +
+      "<path d=\"M70 400 C 90 340, 40 320, 80 280 C 110 330, 70 350, 100 400 Z\" fill=\"#4d5e48\"/>" +
+      "<path d=\"M520 400 C 500 330, 560 300, 530 250 C 575 320, 530 340, 560 400 Z\" fill=\"#3e4f3c\"/>"
+    : leaf(120, 300, -12, "#5c6e52") + leaf(500, 280, 18, "#6d7f62");
+  const body = sun(greens ? 300 : 96, greens ? 40 : 64, greens ? 12 : 22, "#f7e4bf") +
+    cloud(360, 54, 0.9) +
+    "<path d=\"M0 210 Q 200 160 420 198 T 600 186 L 600 280 Q 300 250 0 286 Z\" fill=\"#a9b8a4\"/>" +
+    canopy([
+      [40, 176, 70, 58, "#7f9278"],
+      [140, 160, 78, 64, "#8ea288"],
+      [250, 150, 70, 54, "#73866c"],
+      [390, 158, 86, 60, "#66785f"],
+      [510, 148, 80, 62, "#7d9076"],
+      [590, 170, 60, 50, "#5d6e56"]
+    ]) +
+    canopy([
+      [20, 230, 90, 70, "#465744"],
+      [150, 214, 70, 56, "#3e4f3c"],
+      [470, 220, 84, 64, "#3e4f3c"],
+      [600, 240, 80, 70, "#31402f"]
+    ]) +
+    "<path d=\"" + path + "\" fill=\"#eadfcb\"/>" +
+    "<ellipse class=\"dapple\" cx=\"300\" cy=\"300\" rx=\"16\" ry=\"8\" fill=\"#fff6df\"/>" +
+    "<ellipse class=\"dapple\" cx=\"330\" cy=\"210\" rx=\"12\" ry=\"6\" fill=\"#fff6df\"/>" +
+    stream +
+    extraGreen +
+    "<ellipse cx=\"-10\" cy=\"430\" rx=\"180\" ry=\"80\" fill=\"#3e4f3c\"/>" +
+    "<ellipse cx=\"620\" cy=\"440\" rx=\"170\" ry=\"78\" fill=\"#31402f\"/>";
+  return svgWrap(400, skyDef(id, sky[0], sky[1], sky[2]), "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" + body);
+}
+
+function drawGarden(mode) {
+  const id = "garden-sky-" + mode + "-" + (++artSeq);
+  if (mode === "flower") {
+    const blur = "garden-blur-" + artSeq;
+    const defs = "<filter id=\"" + blur + "\"><feGaussianBlur stdDeviation=\"8\"/></filter>" +
+      skyDef(id, "#f3e4cc", "#e7d3b4", "#d9cbb6");
+    const back = "<g filter=\"url(#" + blur + ")\">" +
+      "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" +
+      "<rect x=\"0\" y=\"230\" width=\"600\" height=\"180\" fill=\"#b7a484\"/>" +
+      canopy([[80, 180, 90, 50, "#8ea088"], [240, 160, 110, 50, "#6d7c66"], [460, 190, 120, 54, "#5d6e56"]]) +
+      bloom(120, 250, 18, "#d4a194", "#e6d3a4", 0) +
+      bloom(480, 270, 16, "#f0e2c0", "#d7b56a", 8) +
+      "</g>";
+    const front = stem(340, 370, 230, 188, -70) +
+      leaf(250, 250, -40, "#5c6e52") +
+      leaf(300, 230, 20, "#6d7f62") +
+      bloom(214, 168, 46, "#b85c48", "#e6c98a", -24) +
+      drop(236, 146, 5);
+    return svgWrap(400, defs, back + front);
+  }
+
+  if (mode === "detail") {
+    const defs = skyDef(id, "#efe2cc", "#e4d2b6", "#cbb89a");
+    let stones = "";
+    let x = 0;
+    const widths = [78, 64, 90, 52, 84, 70, 88, 74];
+    const heights = [210, 180, 230, 160, 200, 176, 220, 168];
+    for (let i = 0; i < widths.length; i += 1) {
+      stones += "<rect x=\"" + x + "\" y=\"" + (250 - heights[i]) + "\" width=\"" + (widths[i] - 4) + "\" height=\"" + heights[i] + "\" fill=\"" + (i % 2 ? "#cbb89a" : "#b79a72") + "\"/>";
+      x += widths[i];
+    }
+    const body = "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" +
+      "<rect x=\"0\" y=\"250\" width=\"600\" height=\"150\" fill=\"#cfc3ae\"/>" +
+      stones +
+      "<path d=\"M40 250 Q 200 242 360 252 T 600 246 L 600 290 L 0 300 Z\" fill=\"#7d8b6c\" opacity=\"0.85\"/>" +
+      stem(168, 196, 292, 228, 24) +
+      bloom(304, 214, 30, "#c46a58", "#efd7a4", 72) +
+      leaf(230, 214, 55, "#5c6e52") +
+      leaf(268, 198, 12, "#6d7f62") +
+      drop(176, 214, 3.5) + drop(198, 236, 2.6) +
+      bee(360, 176);
+    return svgWrap(400, defs, body);
+  }
+
+  const defs = skyDef(id, "#f4e6d0", "#e7d5b8", "#d5ddd4");
+  let wall = "";
+  let cursor = 0;
+  const blocks = [[70, 52], [54, 40], [86, 58], [48, 36], [92, 50], [60, 44], [74, 48], [66, 38], [70, 46]];
+  blocks.forEach(function (block, index) {
+    wall += "<rect x=\"" + cursor + "\" y=\"" + (168 - block[1]) + "\" width=\"" + (block[0] - 3) + "\" height=\"" + block[1] + "\" fill=\"" + (index % 2 ? "#d2c0a2" : "#c3ae8c") + "\"/>";
+    cursor += block[0];
+  });
+  const body = sun(80, 58, 20, "#f6e3bf") +
+    cloud(360, 46, 0.85) +
+    "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" +
+    canopy([[80, 78, 70, 36, "#8ea088"], [220, 70, 90, 40, "#73866c"], [400, 84, 100, 36, "#66785f"], [540, 76, 80, 34, "#7d9076"]]) +
+    wall +
+    "<path d=\"M0 168 Q 150 176 300 168 T 600 174 L 600 210 L 0 206 Z\" fill=\"#7f8f6e\"/>" +
+    "<rect x=\"0\" y=\"200\" width=\"600\" height=\"200\" fill=\"#d5d3b8\"/>" +
+    "<path d=\"M0 230 Q 200 210 400 228 T 600 220 L 600 400 L 0 400 Z\" fill=\"#c9cba8\"/>" +
+    stem(120, 340, 120, 214, 0) + bloom(120, 200, 18, "#f0e0c2", "#e2c27a", -4) +
+    stem(210, 360, 198, 230, -16) + bloom(188, 214, 22, "#b85c48", "#efd7a2", 22) +
+    stem(300, 350, 310, 236, 8) + bloom(310, 220, 16, "#d7a398", "#f3e6c8", 0) +
+    stem(420, 348, 436, 228, 14) + bloom(442, 214, 19, "#e7d7b0", "#d7b56a", -6) +
+    stem(520, 340, 510, 240, -6) + bloom(508, 226, 15, "#c46a58", "#f0ddb0", 8) +
+    leaf(150, 280, -20, "#5c6e52") + leaf(360, 300, 15, "#6d7f62") + leaf(470, 290, -8, "#4d5e48") +
+    "<ellipse cx=\"250\" cy=\"332\" rx=\"7\" ry=\"4\" fill=\"#c46a58\" transform=\"rotate(20 250 332)\"/>" +
+    "<ellipse cx=\"274\" cy=\"348\" rx=\"6\" ry=\"3.4\" fill=\"#f0e0c2\" transform=\"rotate(-16 274 348)\"/>" +
+    "<ellipse cx=\"168\" cy=\"300\" rx=\"5\" ry=\"3\" fill=\"#d7a398\"/>" +
+    bee(360, 188) +
+    drop(176, 206, 3);
+  return svgWrap(400, defs, body);
+}
+
+function drawWater(mode) {
+  const id = "water-sky-" + mode + "-" + (++artSeq);
+  const fallId = "falls-" + mode + "-" + artSeq;
+  const coolSky = skyDef(id, "#e7eef0", "#d5e0dc", "#c5d0cc");
+  if (mode === "silver") {
+    const body = "<rect width=\"600\" height=\"400\" fill=\"#6d858e\"/>" +
+      "<rect x=\"0\" y=\"0\" width=\"600\" height=\"150\" fill=\"url(#" + id + ")\"/>" +
+      "<path d=\"M0 0 L 210 0 L 180 150 L 0 160 Z\" fill=\"#4e595c\"/>" +
+      "<path d=\"M600 0 L 390 0 L 430 146 L 600 154 Z\" fill=\"#5c6768\"/>" +
+      falls(230, 0, 130, 150, fallId) +
+      "<rect x=\"0\" y=\"168\" width=\"600\" height=\"232\" fill=\"#7c969e\"/>" +
+      "<g class=\"reflection\">" +
+      "<ellipse cx=\"130\" cy=\"255\" rx=\"34\" ry=\"46\" fill=\"#e7f3ef\" opacity=\"0.55\"/>" +
+      "<ellipse cx=\"250\" cy=\"278\" rx=\"42\" ry=\"58\" fill=\"#d5e6e0\" opacity=\"0.5\"/>" +
+      "<ellipse cx=\"390\" cy=\"262\" rx=\"36\" ry=\"50\" fill=\"#f4faf8\" opacity=\"0.45\"/>" +
+      "<ellipse cx=\"500\" cy=\"286\" rx=\"28\" ry=\"40\" fill=\"#c9ddd6\" opacity=\"0.4\"/>" +
+      "</g>" +
+      "<ellipse cx=\"300\" cy=\"300\" rx=\"90\" ry=\"8\" fill=\"#f7fbfb\" opacity=\"0.18\"/>" +
+      "<ellipse cx=\"240\" cy=\"340\" rx=\"50\" ry=\"5\" fill=\"#f7fbfb\" opacity=\"0.14\"/>" +
+      leaf(180, 250, 30, "#6d7c66");
+    return svgWrap(400, coolSky, body);
+  }
+
+  const distant = mode === "still";
+  const crooked = distant ? "<g transform=\"rotate(-1.6 300 200)\">" : "";
+  const crookedEnd = distant ? "</g>" : "";
+  const fall = distant
+    ? falls(274, 118, 64, 78, fallId)
+    : falls(228, 72, 150, 156, fallId);
+  const bank = mode === "fall" ? "" :
+    "<rect x=\"448\" y=\"214\" width=\"5\" height=\"48\" fill=\"#8d7b62\"/>" +
+    "<rect x=\"528\" y=\"206\" width=\"5\" height=\"56\" fill=\"#8d7b62\"/>" +
+    "<rect x=\"448\" y=\"224\" width=\"85\" height=\"4\" fill=\"#a08b6c\"/>" +
+    bicycle(468, 258, 0.72);
+  const foregroundStone = distant
+    ? "<ellipse cx=\"478\" cy=\"352\" rx=\"86\" ry=\"26\" fill=\"#6a645c\"/><ellipse cx=\"460\" cy=\"344\" rx=\"64\" ry=\"14\" fill=\"#8a8176\"/>"
+    : "";
+  const cliffs = distant
+    ? "<path d=\"M210 108 C 250 96, 286 112, 292 150 C 270 168, 236 160, 214 138 Z\" fill=\"#5c6668\"/>" +
+      "<path d=\"M392 102 C 360 96, 332 118, 338 154 C 360 170, 398 160, 404 132 Z\" fill=\"#4e585b\"/>"
+    : "<path d=\"M0 48 C 36 78, 18 140, 78 168 C 150 202, 176 176, 188 230 C 168 292, 70 286, 0 312 Z\" fill=\"#556064\"/>" +
+      "<path d=\"M18 96 C 62 86, 108 124, 92 168 C 78 206, 28 188, 22 146 Z\" fill=\"#7c8686\"/>" +
+      "<path d=\"M600 36 C 548 74, 572 146, 500 176 C 430 208, 404 176, 398 236 C 430 300, 530 292, 600 318 Z\" fill=\"#4a5458\"/>" +
+      "<path d=\"M572 108 C 528 98, 492 140, 514 178 C 530 208, 574 196, 582 154 Z\" fill=\"#6e7878\"/>";
+  const body = crooked +
+    sun(78, 46, 16, "#f4ead4") +
+    "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" +
+    canopy([[70, 54, 64, 32, "#3e4f3c"], [168, 46, 52, 28, "#4d5e48"], [448, 50, 60, 30, "#3e4f3c"], [548, 58, 48, 26, "#31402f"]]) +
+    cliffs +
+    fall +
+    "<path d=\"M0 268 C 140 236, 250 252, 360 244 C 470 236, 540 258, 600 246 L 600 400 L 0 400 Z\" fill=\"#6f8d98\"/>" +
+    "<path d=\"M70 312 C 180 292, 340 300, 500 316 C 390 348, 180 352, 70 334 Z\" fill=\"#8aa6ae\" opacity=\"0.55\"/>" +
+    "<g class=\"reflection\">" +
+    "<ellipse cx=\"250\" cy=\"318\" rx=\"18\" ry=\"28\" fill=\"#d7e7e4\" opacity=\"0.45\"/>" +
+    "<ellipse cx=\"300\" cy=\"334\" rx=\"22\" ry=\"34\" fill=\"#c5d8d2\" opacity=\"0.4\"/>" +
+    "<ellipse cx=\"348\" cy=\"322\" rx=\"14\" ry=\"24\" fill=\"#e7f2ef\" opacity=\"0.35\"/>" +
+    "</g>" +
+    "<ellipse cx=\"248\" cy=\"236\" rx=\"22\" ry=\"10\" fill=\"#3c4749\"/>" +
+    "<ellipse cx=\"352\" cy=\"248\" rx=\"18\" ry=\"9\" fill=\"#455154\"/>" +
+    "<circle cx=\"286\" cy=\"228\" r=\"3\" fill=\"#f7fbfb\" opacity=\"0.55\"/>" +
+    "<circle cx=\"304\" cy=\"234\" r=\"2\" fill=\"#f7fbfb\" opacity=\"0.4\"/>" +
+    bank +
+    foregroundStone +
+    crookedEnd;
+  return svgWrap(400, coolSky, body);
+}
+
+function drawStreet(mode) {
+  const id = "street-sky-" + mode + "-" + (++artSeq);
+  const sky = skyDef(id, "#f3dcc6", "#e7c4a4", "#d7b492");
+  if (mode === "stone") {
+    let blocks = "";
+    const rows = 7;
+    const cols = 5;
+    for (let r = 0; r < rows; r += 1) {
+      for (let c = 0; c < cols; c += 1) {
+        const w = 112 + ((r + c) % 3) * 8;
+        const h = 42 + ((r * 2 + c) % 3) * 6;
+        const x = c * 122 - (r % 2) * 18;
+        const y = 36 + r * 52;
+        const tone = (r + c) % 2 === 0 ? "#e0c39a" : "#d2b184";
+        blocks += "<rect x=\"" + x + "\" y=\"" + y + "\" width=\"" + w + "\" height=\"" + (h - 4) + "\" fill=\"" + tone + "\"/>";
+      }
+    }
+    const body = "<rect width=\"600\" height=\"400\" fill=\"#c9a56e\"/>" +
+      "<rect x=\"0\" y=\"0\" width=\"600\" height=\"28\" fill=\"url(#" + id + ")\"/>" +
+      blocks +
+      "<g transform=\"rotate(2 300 150)\">" + sash(250, 78, 86, 118, "#c9a56e", "#4c5962") + "</g>" +
+      sash(70, 190, 78, 108, "#d2b184", "#5c6a72") +
+      "<rect x=\"380\" y=\"40\" width=\"220\" height=\"360\" fill=\"#f0cc96\" opacity=\"0.28\"/>";
+    return svgWrap(400, sky, body);
+  }
+
+  if (mode === "door") {
+    const body = "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" +
+      "<rect x=\"40\" y=\"30\" width=\"520\" height=\"300\" fill=\"#e2c7a2\"/>" +
+      "<rect x=\"70\" y=\"48\" width=\"150\" height=\"46\" fill=\"#d2b184\"/>" +
+      "<rect x=\"230\" y=\"40\" width=\"180\" height=\"54\" fill=\"#c9a56e\"/>" +
+      "<rect x=\"420\" y=\"52\" width=\"120\" height=\"42\" fill=\"#d8bc90\"/>" +
+      sash(92, 70, 54, 74, "#d2b184", "#667480") +
+      "<rect x=\"230\" y=\"96\" width=\"150\" height=\"230\" fill=\"#5d6e56\"/>" +
+      "<rect x=\"242\" y=\"250\" width=\"126\" height=\"76\" fill=\"#7e8f74\"/>" +
+      "<circle cx=\"348\" cy=\"214\" r=\"5\" fill=\"#e6d3b0\"/>" +
+      "<rect x=\"210\" y=\"310\" width=\"190\" height=\"16\" fill=\"#b7a48a\"/>" +
+      "<rect x=\"206\" y=\"326\" width=\"198\" height=\"18\" fill=\"#a8906e\"/>" +
+      "<ellipse cx=\"430\" cy=\"286\" rx=\"28\" ry=\"10\" fill=\"#8d7b62\"/>" +
+      "<rect x=\"422\" y=\"250\" width=\"16\" height=\"36\" fill=\"#8d7b62\"/>" +
+      bloom(414, 236, 12, "#c46a58", "#f0ddb0", 0) +
+      bloom(446, 232, 11, "#f0e0c2", "#e2c27a", 6) +
+      bloom(430, 220, 9, "#d7a398", "#f3e6c8", -8) +
+      "<circle cx=\"250\" cy=\"338\" r=\"2\" fill=\"#6b5344\"/>" +
+      "<circle cx=\"268\" cy=\"344\" r=\"1.6\" fill=\"#6b5344\"/>" +
+      "<circle cx=\"286\" cy=\"336\" r=\"1.4\" fill=\"#6b5344\"/>";
+    return svgWrap(400, sky, body);
+  }
+
+  if (mode === "window") {
+    const body = "<rect width=\"600\" height=\"400\" fill=\"#d7b892\"/>" +
+      "<rect x=\"70\" y=\"36\" width=\"460\" height=\"300\" fill=\"#c9a56e\"/>" +
+      "<clipPath id=\"win-clip-" + artSeq + "\"><rect x=\"118\" y=\"70\" width=\"360\" height=\"230\"/></clipPath>" +
+      "<rect x=\"118\" y=\"70\" width=\"360\" height=\"230\" fill=\"#efd0a4\"/>" +
+      "<g clip-path=\"url(#win-clip-" + artSeq + ")\">" +
+      "<rect x=\"150\" y=\"150\" width=\"70\" height=\"46\" rx=\"2\" fill=\"#7a5344\"/>" +
+      "<rect x=\"156\" y=\"156\" width=\"58\" height=\"34\" fill=\"#f4efe4\"/>" +
+      "<path d=\"M160 168 H210 M160 176 H200 M160 184 H206\" stroke=\"#c9b496\" stroke-width=\"1\"/>" +
+      "<ellipse cx=\"250\" cy=\"196\" rx=\"16\" ry=\"10\" fill=\"#f7f3ea\"/>" +
+      "<rect x=\"242\" y=\"196\" width=\"16\" height=\"16\" fill=\"#f7f3ea\"/>" +
+      "<path d=\"M430 120 Q 500 150 520 250 L 520 300 L 400 300 Q 390 200 430 120 Z\" fill=\"#e0b89a\"/>" +
+      "<path d=\"M80 40 L 260 250\" stroke=\"#fffaf3\" stroke-width=\"28\" opacity=\"0.16\"/>" +
+      "</g>" +
+      "<rect x=\"104\" y=\"56\" width=\"392\" height=\"258\" fill=\"none\" stroke=\"#b8926a\" stroke-width=\"16\"/>" +
+      "<rect x=\"286\" y=\"70\" width=\"10\" height=\"230\" fill=\"#b8926a\"/>" +
+      bloom(96, 300, 10, "#c46a58", "#f0ddb0", 0) +
+      "<rect x=\"70\" y=\"318\" width=\"460\" height=\"18\" fill=\"#b79a72\"/>";
+    return svgWrap(400, sky, body);
+  }
+
+  const body = sun(520, 46, 16, "#f8e2bc") +
+    "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" +
+    "<rect x=\"0\" y=\"36\" width=\"250\" height=\"300\" fill=\"#e0c49c\"/>" +
+    "<rect x=\"340\" y=\"24\" width=\"260\" height=\"312\" fill=\"#c9a56e\"/>" +
+    "<rect x=\"230\" y=\"70\" width=\"130\" height=\"250\" fill=\"#edd3ae\"/>" +
+    sash(36, 70, 62, 86, "#d2b184", "#4c5962") +
+    sash(150, 78, 58, 80, "#e0c49c", "#5c6a72") +
+    "<g transform=\"rotate(-1.5 292 120)\">" + sash(250, 86, 48, 70, "#edd3ae", "#667480") + "</g>" +
+    sash(390, 60, 64, 90, "#c9a56e", "#efd0a4") +
+    sash(490, 78, 58, 82, "#b8926a", "#3e4a52") +
+    "<rect x=\"48\" y=\"196\" width=\"78\" height=\"126\" fill=\"#5d6e56\"/>" +
+    "<rect x=\"56\" y=\"270\" width=\"62\" height=\"52\" fill=\"#7e8f74\"/>" +
+    "<circle cx=\"112\" cy=\"262\" r=\"4\" fill=\"#e6d3b0\"/>" +
+    bloom(150, 292, 11, "#c46a58", "#f0ddb0", 4) +
+    bloom(176, 300, 9, "#f0e0c2", "#e2c27a", -6) +
+    "<rect x=\"138\" y=\"304\" width=\"16\" height=\"22\" fill=\"#8d7b62\"/>" +
+    "<rect x=\"400\" y=\"250\" width=\"36\" height=\"4\" fill=\"#8d7b62\"/>" +
+    "<rect x=\"412\" y=\"254\" width=\"4\" height=\"28\" fill=\"#8d7b62\"/>" +
+    "<ellipse cx=\"418\" cy=\"248\" rx=\"8\" ry=\"5\" fill=\"#f7f3ea\"/>" +
+    "<path d=\"M424 286 Q 446 270 456 300 L 430 306 Z\" fill=\"#d7b39a\"/>" +
+    "<rect x=\"0\" y=\"330\" width=\"600\" height=\"70\" fill=\"#cfc1ab\"/>" +
+    "<path d=\"M0 348 H600\" stroke=\"#b7a48a\" stroke-width=\"3\"/>";
+  return svgWrap(400, sky, body);
+}
+
+function drawHill(mode) {
+  const id = "hill-sky-" + mode + "-" + (++artSeq);
+  const evening = skyDef(id, "#e7eef0", "#f3d2ba", "#f0b996");
+  const landLow = mode === "sky" || mode === "away";
+  const crooked = mode === "away" ? "<g transform=\"rotate(-2.2 300 220)\">" : "";
+  const crookedEnd = mode === "away" ? "</g>" : "";
+  const horizon = landLow ? 318 : 168;
+  const body = crooked +
+    sun(landLow ? 150 : 110, landLow ? 250 : 188, landLow ? 20 : 18, "#f8e3b8") +
+    cloud(300, landLow ? 80 : 50, 1.1) +
+    cloud(470, landLow ? 120 : 36, 0.7) +
+    "<rect width=\"600\" height=\"400\" fill=\"url(#" + id + ")\"/>" +
+    "<path d=\"M0 " + (horizon + 8) + " Q 180 " + (horizon - 36) + " 360 " + horizon + " T 600 " + (horizon - 10) + " L 600 400 L 0 400 Z\" fill=\"#b7c5c6\"/>" +
+    "<path d=\"M0 " + (horizon + 36) + " Q 220 " + (horizon + 4) + " 420 " + (horizon + 30) + " T 600 " + (horizon + 16) + " L 600 400 L 0 400 Z\" fill=\"#8ea088\"/>" +
+    "<path d=\"M0 " + (horizon + 78) + " Q 200 " + (horizon + 40) + " 380 " + (horizon + 70) + " T 600 " + (horizon + 48) + " L 600 400 L 0 400 Z\" fill=\"#5d6e56\"/>" +
+    "<path d=\"M120 " + (horizon + 54) + " C 180 " + (horizon + 70) + ", 230 " + (horizon + 48) + ", 280 " + (horizon + 78) + "\" fill=\"none\" stroke=\"#d5e4e8\" stroke-width=\"3\"/>" +
+    "<rect x=\"250\" y=\"" + (horizon + 34) + "\" width=\"16\" height=\"12\" fill=\"#e0c49c\"/>" +
+    "<rect x=\"270\" y=\"" + (horizon + 28) + "\" width=\"20\" height=\"18\" fill=\"#d2b184\"/>" +
+    "<rect x=\"294\" y=\"" + (horizon + 36) + "\" width=\"14\" height=\"10\" fill=\"#c9a56e\"/>" +
+    canopy([
+      [150, horizon + 62, 16, 12, "#3e4f3c"],
+      [190, horizon + 56, 14, 11, "#31402f"],
+      [430, horizon + 60, 18, 12, "#3e4f3c"]
+    ]) +
+    "<path d=\"M0 " + (horizon + 120) + " Q 300 " + (horizon + 90) + " 600 " + (horizon + 130) + " L 600 400 L 0 400 Z\" fill=\"#3e4f3c\"/>" +
+    (mode === "sky" ? "<path d=\"M80 70 l8 6 l8 -6\" fill=\"none\" stroke=\"#5c5348\" stroke-width=\"1.4\"/>" : "") +
+    crookedEnd;
+  return svgWrap(400, evening, body);
+}
+
+function renderArt(name) {
+  if (name === "poster") return drawPoster();
+  if (name === "path" || name === "path-water" || name === "path-green" || name === "path-small") {
+    const mode = name === "path" ? "place" : name.replace("path-", "");
+    return drawPath(mode);
+  }
+  if (name === "garden" || name === "garden-flower" || name === "garden-wide" || name === "garden-detail") {
+    const mode = name === "garden" ? "place" : name.replace("garden-", "");
+    return drawGarden(mode === "wide" ? "place" : mode);
+  }
+  if (name === "water" || name === "water-fall" || name === "water-silver" || name === "water-still") {
+    const mode = name === "water" ? "place" : name.replace("water-", "");
+    return drawWater(mode === "fall" ? "fall" : mode);
+  }
+  if (name === "street" || name === "street-stone" || name === "street-door" || name === "street-window") {
+    const mode = name === "street" ? "place" : name.replace("street-", "");
+    return drawStreet(mode);
+  }
+  if (name === "hill" || name === "hill-view" || name === "hill-sky" || name === "hill-away") {
+    const mode = name === "hill" ? "place" : name.replace("hill-", "");
+    return drawHill(mode === "view" ? "place" : mode);
+  }
+  return drawPath("place");
+}
+
+function cameraIcon() {
+  return "<svg viewBox=\"0 0 64 48\" aria-hidden=\"true\">" +
+    "<path d=\"M22 12 l4 -6 h12 l4 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\"/>" +
+    "<rect x=\"6\" y=\"12\" width=\"52\" height=\"30\" rx=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\"/>" +
+    "<circle cx=\"32\" cy=\"27\" r=\"8\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\"/>" +
+    "<circle cx=\"32\" cy=\"27\" r=\"2.4\" fill=\"currentColor\"/>" +
+    "</svg>";
+}
+
+/* ============================================================
+   AUDIO
+   Original, very quiet, synthesized. Never required.
+   ============================================================ */
+const audio = {
+  ctx: null,
+  master: null,
+  filter: null,
+  muted: true,
+  failed: false
+};
+
+function ensureAudio() {
+  if (audio.ctx || audio.failed) return !!audio.ctx;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) {
+    audio.failed = true;
+    return false;
+  }
+  try {
+    const ctx = new Ctx();
+    const master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 520;
+    filter.Q.value = 0.6;
+    filter.connect(master);
+
+    const length = ctx.sampleRate * 2;
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < length; i += 1) {
+      const white = Math.random() * 2 - 1;
+      last = (last + 0.02 * white) / 1.02;
+      data[i] = last * 3.2;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    noise.loop = true;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.05;
+    noise.connect(noiseGain);
+    noiseGain.connect(filter);
+    noise.start();
+
+    const warm = ctx.createOscillator();
+    warm.type = "sine";
+    warm.frequency.value = 196;
+    const warmGain = ctx.createGain();
+    warmGain.gain.value = 0.012;
+    warm.connect(warmGain);
+    warmGain.connect(filter);
+    warm.start();
+
+    const fifth = ctx.createOscillator();
+    fifth.type = "sine";
+    fifth.frequency.value = 246.94;
+    const fifthGain = ctx.createGain();
+    fifthGain.gain.value = 0.008;
+    fifth.connect(fifthGain);
+    fifthGain.connect(filter);
+    fifth.start();
+
+    audio.ctx = ctx;
+    audio.master = master;
+    audio.filter = filter;
+    return true;
+  } catch (error) {
+    audio.failed = true;
+    return false;
+  }
+}
+
+function fadeMaster(value) {
+  if (!audio.master || !audio.ctx) return;
+  const now = audio.ctx.currentTime;
+  audio.master.gain.cancelScheduledValues(now);
+  audio.master.gain.setValueAtTime(audio.master.gain.value, now);
+  audio.master.gain.linearRampToValueAtTime(value, now + 0.6);
+}
+
+function setAmbience(kind) {
+  if (!audio.filter || !audio.ctx || audio.muted) return;
+  const freqs = { title: 480, path: 540, garden: 680, water: 320, street: 560, hill: 820 };
+  const next = freqs[kind] || 520;
+  const now = audio.ctx.currentTime;
+  audio.filter.frequency.cancelScheduledValues(now);
+  audio.filter.frequency.linearRampToValueAtTime(next, now + 1.2);
+}
+
+function shutterSound() {
+  if (!audio.ctx || audio.muted || !audio.master) return;
+  const ctx = audio.ctx;
+  const length = Math.floor(ctx.sampleRate * 0.05);
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+  }
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const gain = ctx.createGain();
+  gain.gain.value = 0.18;
+  const filter = ctx.createBiquadFilter();
+  filter.type = "highpass";
+  filter.frequency.value = 900;
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(audio.master);
+  source.start();
+}
+
+function syncMuteButton() {
+  dom.mute.textContent = audio.failed ? "No sound" : (audio.muted ? "Sound off" : "Sound on");
+  dom.mute.setAttribute("aria-pressed", audio.muted ? "false" : "true");
+  dom.mute.disabled = audio.failed;
+}
+
+function toggleSound() {
+  if (audio.failed) return;
+  audio.muted = !audio.muted;
+  if (!audio.muted) {
+    if (!ensureAudio()) {
+      audio.muted = true;
+      syncMuteButton();
+      return;
+    }
+    audio.ctx.resume().catch(function () {});
+    fadeMaster(0.28);
+    const sceneId = currentSceneId();
+    const kinds = { title: "title", scene: sceneId, capture: sceneId, gallery: "hill" };
+    setAmbience(kinds[phase] || "title");
+  } else if (audio.ctx) {
+    fadeMaster(0);
+    const ctx = audio.ctx;
+    setTimeout(function () {
+      if (audio.muted && audio.ctx === ctx) {
+        ctx.suspend().catch(function () {});
+      }
+    }, 700);
+  }
+  syncMuteButton();
+}
+
+/* ============================================================
+   GAME FLOW
+   ============================================================ */
+function renderTitle() {
+  phase = "title";
+  updateChrome();
+  setAmbience("title");
+  const title = escapeHtml(CONFIG.title || "The Photo Walk");
+  dom.main.innerHTML =
+    "<section class=\"title-screen\">" +
+      "<div class=\"poster-slot print\" role=\"img\" aria-label=\"A small landscape of trees, water, and warm stone under a wide sky.\">" +
+        "<div class=\"art-slot\">" + renderArt("poster") + "</div>" +
+      "</div>" +
+      "<div class=\"title-copy\">" +
+        "<h1 class=\"game-title\" id=\"view-title\" tabindex=\"-1\">" + title + "</h1>" +
+        "<p class=\"subtitle\">A small walk. A camera. A few things worth noticing.</p>" +
+        "<div class=\"title-actions\"><button type=\"button\" class=\"btn\" data-action=\"begin\">Begin the walk</button></div>" +
+        "<p class=\"whisper\">Take your time.</p>" +
+      "</div>" +
+    "</section>";
+}
+
+function sceneCopy(scene) {
+  const previous = state.choices[state.choices.length - 1];
+  const callback = CALLBACKS[scene.id] ? CALLBACKS[scene.id][previous] : "";
+  const base = state.walk > 1 && scene.textAlt ? scene.textAlt : scene.text;
+  return { callback: callback || "", base: base };
+}
+
+function renderScene() {
+  phase = "scene";
+  captureReady = false;
+  clearTimers();
+  const scene = sceneByIndex(state.currentScene);
+  if (!scene) {
+    state.currentScene = 0;
+    renderTitle();
+    return;
+  }
+  updateChrome();
+  setAmbience(scene.id);
+  const copy = sceneCopy(scene);
+  const choices = renderChoices(scene);
+  const lead = copy.callback ? "<p>" + escapeHtml(copy.callback) + "</p>" : "";
+  dom.main.innerHTML =
+    "<article class=\"scene\" data-scene=\"" + scene.id + "\">" +
+      "<header class=\"scene-head\">" +
+        "<h1 id=\"view-title\" tabindex=\"-1\">" + escapeHtml(scene.title) + "</h1>" +
+        "<p>" + escapeHtml(scene.time) + "</p>" +
+      "</header>" +
+      "<figure class=\"print\">" +
+        "<div class=\"art-slot\" role=\"img\" aria-label=\"" + escapeHtml(scene.alt) + "\">" + renderArt(scene.art) + "</div>" +
+      "</figure>" +
+      "<div class=\"prose\">" + lead + "<p>" + escapeHtml(copy.base) + "</p></div>" +
+      "<div class=\"choices\" role=\"group\" aria-label=\"What do you notice?\">" + choices + "</div>" +
+    "</article>";
+  window.scrollTo({ top: 0, behavior: prefersReduced() ? "auto" : "smooth" });
+  focusNode("view-title");
+}
+
+function renderChoices(scene) {
+  return scene.choices.map(function (choice) {
+    return "<button type=\"button\" class=\"choice\" data-action=\"choice\" data-choice=\"" + escapeHtml(choice.id) + "\">" +
+      escapeHtml(choice.label) + "</button>";
+  }).join("");
+}
+
+function renderCapture(choice, photo) {
+  const scene = sceneByIndex(state.currentScene);
+  if (!scene || !choice || !photo) {
+    recover();
+    return;
+  }
+  phase = "capture";
+  captureReady = false;
+  updateChrome();
+  const kicker = choice.quiet ? "A quiet frame" : "Photograph added";
+  const nextLabel = state.currentScene >= SCENES.length - 1 ? "See your walk" : "Keep walking";
+  dom.main.innerHTML =
+    "<article class=\"capture\" id=\"capture\">" +
+      "<header class=\"capture-head\">" +
+        "<h1 id=\"view-title\" tabindex=\"-1\">" + escapeHtml(scene.title) + "</h1>" +
+        "<p>" + escapeHtml(scene.time) + "</p>" +
+      "</header>" +
+      "<p class=\"passage\" id=\"passage\" tabindex=\"-1\">" + escapeHtml(choice.passage) + "</p>" +
+      "<div class=\"finder\" id=\"finder\">" +
+        "<div class=\"corners\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span></div>" +
+        "<div class=\"shutter\" aria-hidden=\"true\"></div>" +
+        "<div class=\"mat\">" +
+          "<div class=\"art-slot\">" + renderArt(photo.art) + "</div>" +
+          "<div class=\"mat-foot reveal\"><span>" + plate(photo.number) + "</span><span>" + escapeHtml(photo.clock) + "</span></div>" +
+        "</div>" +
+      "</div>" +
+      "<div class=\"capture-copy\">" +
+        "<p class=\"kicker\" id=\"kicker\"></p>" +
+        "<p class=\"sr-only\" id=\"kicker-live\" aria-live=\"polite\"></p>" +
+        "<h2 class=\"reveal\" id=\"capture-heading\" aria-hidden=\"true\">" + escapeHtml(photo.title) + "</h2>" +
+        "<p class=\"capture-caption reveal\">" + escapeHtml(photo.caption) + "</p>" +
+        "<button type=\"button\" class=\"btn\" id=\"continueBtn\" data-action=\"continue\" hidden>" + nextLabel + "</button>" +
+      "</div>" +
+    "</article>";
+  window.scrollTo({ top: 0, behavior: prefersReduced() ? "auto" : "smooth" });
+  playCapture(kicker, photo.title);
+}
+
+/* ============================================================
+   CHOICE HANDLING
+   ============================================================ */
+function addTraits(traits) {
+  Object.keys(traits || {}).forEach(function (key) {
+    const amount = traits[key];
+    if (typeof state.traits[key] !== "number") return;
+    if (typeof amount !== "number" || !isFinite(amount)) return;
+    state.traits[key] += amount;
+  });
+}
+
+function makeChoice(choiceId) {
+  if (phase !== "scene" || !inputOpen()) return;
+  const scene = sceneByIndex(state.currentScene);
+  const choice = scene && choiceById(scene, choiceId);
+  if (!choice || !choice.photo) return;
+  holdInput(INPUT_HOLD);
+  addTraits(choice.traits || {});
+  state.choices.push(choice.id);
+  const photo = capturePhoto(choice);
+  renderCapture(choice, photo);
+}
+
+function capturePhoto(choice) {
+  const photo = {
+    title: choice.photo.title,
+    location: choice.photo.location,
+    time: choice.photo.time,
+    caption: choice.photo.caption,
+    art: choice.photo.art,
+    alt: choice.photo.alt,
+    quiet: !!choice.quiet,
+    number: state.photos.length + 1,
+    clock: clockFor(state.photos.length)
+  };
+  addToGallery(photo);
+  return photo;
+}
+
+function addToGallery(photo) {
+  state.photos.push(photo);
+  updateChrome();
+}
+
+function continueWalk() {
+  if (phase !== "capture" || !captureReady || !inputOpen()) return;
+  holdInput(INPUT_HOLD);
+  clearTimers();
+  captureReady = false;
+  if (state.currentScene >= SCENES.length - 1) {
+    renderGallery();
+    return;
+  }
+  state.currentScene += 1;
+  renderScene();
+}
+
+function startGame() {
+  if (phase !== "title" || !inputOpen()) return;
+  holdInput(INPUT_HOLD);
+  clearTimers();
+  state.currentScene = 0;
+  state.photos = [];
+  state.choices = [];
+  resetTraits();
+  state.secretClicks = 0;
+  state.secretFound = false;
+  captureReady = false;
+  lightboxIndex = 0;
+  renderScene();
+}
+
+/* ============================================================
+   PHOTO GALLERY
+   ============================================================ */
+function renderGallery() {
+  phase = "gallery";
+  clearTimers();
+  updateChrome();
+  setAmbience("hill");
+  const reflection = generateReflection();
+  const cards = state.photos.map(function (photo, index) {
+    const tilt = [-0.55, 0.4, -0.3, 0.45, -0.2][index] || 0;
+    return "<button type=\"button\" class=\"photo-card\" style=\"--tilt:" + tilt + "deg\" data-action=\"open-photo\" data-index=\"" + index + "\">" +
+      "<span class=\"art-slot\" aria-hidden=\"true\">" + renderArt(photo.art) + "</span>" +
+      "<span class=\"ph-title\">" + escapeHtml(photo.title) + "</span>" +
+      "<span class=\"ph-meta\">" + escapeHtml(photo.location) + " · " + escapeHtml(photo.time) + " · " + escapeHtml(photo.clock) + "</span>" +
+      "<span class=\"ph-caption\">" + escapeHtml(photo.caption) + "</span>" +
+      "</button>";
+  }).join("");
+  const secret = state.secretFound && (CONFIG.secretMessage || "").trim()
+    ? "<p class=\"secret-line\">" + escapeHtml(personalize(CONFIG.secretMessage)) + "</p>"
+    : "";
+  dom.main.innerHTML =
+    "<article class=\"album\">" +
+      "<div class=\"album-kicker\">" +
+        "<p class=\"eyebrow\">Roll " + String(state.walk).padStart(2, "0") + "</p>" +
+        "<button type=\"button\" class=\"icon-btn\" id=\"secretBtn\" data-action=\"secret\" aria-label=\"A small camera\">" + cameraIcon() + "</button>" +
+      "</div>" +
+      "<h1 id=\"view-title\" tabindex=\"-1\">Your walk</h1>" +
+      "<div class=\"secret-slot\" id=\"secretSlot\" aria-live=\"polite\">" + secret + "</div>" +
+      "<div class=\"grid\">" + cards + "</div>" +
+      "<section class=\"reflection\" aria-label=\"A small reflection\">" +
+        "<h2 class=\"trait\">" + escapeHtml(reflection.title) + "</h2>" +
+        "<p>" + escapeHtml(reflection.line) + "</p>" +
+        "<p>" + escapeHtml(reflection.summary) + "</p>" +
+        "<p class=\"landing\">Maybe that was the point.</p>" +
+      "</section>" +
+      personalNote() +
+      "<div class=\"end-actions\"><button type=\"button\" class=\"btn btn-ghost\" data-action=\"restart\">Take another walk</button></div>" +
+    "</article>";
+  window.scrollTo({ top: 0, behavior: prefersReduced() ? "auto" : "smooth" });
+  focusNode("view-title");
+}
+
+function personalNote() {
+  if (!CONFIG.showPersonalMessage) return "";
+  const message = personalize(CONFIG.finalMessage || "").trim();
+  if (!message) return "";
+  const name = realName(CONFIG.recipientName);
+  const sender = realName(CONFIG.senderName);
+  const paragraphs = message.split(/\n\s*\n/).map(function (part) {
+    return "<p>" + escapeHtml(part).replace(/\n/g, "<br>") + "</p>";
+  }).join("");
+  const forLine = name ? "<p class=\"for\">For " + escapeHtml(name) + "</p>" : "";
+  const sign = sender ? "<p class=\"sign\">— " + escapeHtml(sender) + "</p>" : "";
+  return "<hr class=\"rule\">" +
+    "<aside class=\"note\" aria-label=\"A note\">" + forLine + paragraphs + sign + "</aside>";
+}
+
+function openPhoto(index) {
+  if (phase !== "gallery" || !inputOpen()) return;
+  const photo = state.photos[index];
+  if (!photo || !isFinite(index)) return;
+  lightboxIndex = index;
+  paintLightbox();
+  if (dom.lightbox.open) return;
+  setPageLocked(true);
+  try {
+    dom.lightbox.showModal();
+  } catch (error) {
+    setPageLocked(false);
+    return;
+  }
+  focusNode("lb-title", true);
+}
+
+function paintLightbox() {
+  const photo = state.photos[lightboxIndex];
+  if (!photo) return;
+  const last = state.photos.length - 1;
+  dom.lightbox.setAttribute("aria-labelledby", "lb-title");
+  dom.lightbox.innerHTML =
+    "<article class=\"lb-card\">" +
+      "<div class=\"lb-top\">" +
+        "<p class=\"lb-count\">" + (lightboxIndex + 1) + " of " + state.photos.length + "</p>" +
+        "<button type=\"button\" class=\"text-btn\" data-action=\"close-photo\">Close</button>" +
+      "</div>" +
+      "<div class=\"art-slot\" role=\"img\" aria-label=\"" + escapeHtml(photo.alt) + "\">" + renderArt(photo.art) + "</div>" +
+      "<h2 id=\"lb-title\" tabindex=\"-1\">" + escapeHtml(photo.title) + "</h2>" +
+      "<p class=\"lb-meta\">" + escapeHtml(photo.location) + " · " + escapeHtml(photo.time) + " · " + escapeHtml(photo.clock) + " · " + plate(photo.number) + "</p>" +
+      "<p class=\"lb-caption\">" + escapeHtml(photo.caption) + "</p>" +
+      "<div class=\"lb-nav\">" +
+        "<button type=\"button\" class=\"text-btn\" data-action=\"photo-prev\"" + (lightboxIndex === 0 ? " disabled" : "") + ">Previous</button>" +
+        "<button type=\"button\" class=\"text-btn\" data-action=\"photo-next\"" + (lightboxIndex === last ? " disabled" : "") + ">Next</button>" +
+      "</div>" +
+    "</article>";
+}
+
+function stepPhoto(direction) {
+  if (!dom.lightbox.open) return;
+  const next = lightboxIndex + direction;
+  if (next < 0 || next >= state.photos.length) return;
+  lightboxIndex = next;
+  paintLightbox();
+  focusNode("lb-title", true);
+}
+
+function pokeSecret() {
+  if (state.secretFound) return;
+  state.secretClicks += 1;
+  const button = document.getElementById("secretBtn");
+  if (button) {
+    button.classList.remove("is-tapped");
+    void button.offsetWidth;
+    button.classList.add("is-tapped");
+  }
+  if (state.secretClicks < 3) return;
+  state.secretFound = true;
+  const message = personalize(CONFIG.secretMessage || "").trim();
+  const slot = document.getElementById("secretSlot");
+  if (slot && message) {
+    slot.innerHTML = "<p class=\"secret-line\">" + escapeHtml(message) + "</p>";
+  }
+}
+
+/* ============================================================
+   FINAL REFLECTION
+   ============================================================ */
+function generateReflection() {
+  const traits = state.traits;
+  const scores = [
+    { key: "detail", value: traits.detail },
+    { key: "explorer", value: traits.curiosity + traits.adventure },
+    { key: "nature", value: traits.nature },
+    { key: "stillness", value: traits.stillness }
+  ].sort(function (a, b) { return b.value - a.value; });
+
+  const top = scores[0];
+  const second = scores[1];
+  let chosen = top && REFLECTIONS[top.key] ? REFLECTIONS[top.key] : REFLECTIONS.detail;
+  if (top && second && second.value > 0 && top.value - second.value <= 1) {
+    const key = [top.key, second.key].sort().join("+");
+    if (COMBOS[key]) chosen = COMBOS[key];
+  }
+
+  const phrases = state.choices.map(function (id) {
+    for (let i = 0; i < SCENES.length; i += 1) {
+      const match = choiceById(SCENES[i], id);
+      if (match && match.summary) return match.summary;
+    }
+    return "";
+  }).filter(Boolean);
+
+  return {
+    title: chosen && chosen.title ? chosen.title : "The walk",
+    line: chosen && chosen.line ? chosen.line : "You noticed what the afternoon was willing to show you.",
+    summary: phrases.length ? "You " + joinList(phrases) + "." : "You took the walk."
+  };
+}
+
+/* ============================================================
+   ANIMATION
+   ============================================================ */
+function playCapture(kicker, title) {
+  const finder = document.getElementById("finder");
+  const root = document.getElementById("capture");
+  const heading = document.getElementById("capture-heading");
+  const live = document.getElementById("kicker-live");
+  const label = document.getElementById("kicker");
+  const button = document.getElementById("continueBtn");
+  focusNode("passage");
+
+  function finish() {
+    if (phase !== "capture" || !root || !root.isConnected) return;
+    captureReady = true;
+    if (finder) finder.classList.add("is-developed");
+    root.classList.add("is-ready");
+    if (heading) heading.removeAttribute("aria-hidden");
+    if (label) label.textContent = kicker;
+    if (live) live.textContent = kicker + ". " + title + ".";
+    if (button) button.hidden = false;
+    const active = document.activeElement;
+    if (button && (!active || active === document.body || root.contains(active))) {
+      focusNode("continueBtn", true);
+    }
+  }
+
+  if (prefersReduced()) {
+    finish();
+    return;
+  }
+
+  later(function () {
+    if (phase !== "capture" || !finder) return;
+    finder.classList.add("is-shutter");
+    shutterSound();
+  }, 680);
+
+  later(function () {
+    if (phase !== "capture" || !finder) return;
+    finder.classList.remove("is-shutter");
+    finder.classList.add("is-developed");
+  }, 1280);
+
+  later(finish, 2050);
+}
+
+/* ============================================================
+   RESET / REPLAY
+   ============================================================ */
+function restartGame() {
+  if (phase !== "gallery" || !inputOpen()) return;
+  holdInput(INPUT_HOLD);
+  clearTimers();
+  const nextWalk = state.walk + 1;
+  state.currentScene = 0;
+  state.photos = [];
+  state.choices = [];
+  resetTraits();
+  state.walk = nextWalk;
+  state.secretClicks = 0;
+  state.secretFound = false;
+  captureReady = false;
+  lightboxIndex = 0;
+  closeLightbox();
+  renderScene();
+}
+
+function recover() {
+  if (recovering) return;
+  recovering = true;
+  try {
+    clearTimers();
+    heldUntil = 0;
+    closeLightbox();
+    if (state.photos.length >= SCENES.length) {
+      captureReady = true;
+      renderGallery();
+      return;
+    }
+    const scene = sceneByIndex(state.currentScene);
+    if (scene && state.photos.length === state.currentScene + 1) {
+      const choice = choiceById(scene, state.choices[state.currentScene]);
+      const photo = state.photos[state.currentScene];
+      if (choice && photo) {
+        renderCapture(choice, photo);
+        return;
+      }
+    }
+    if (scene && state.photos.length === state.currentScene) {
+      captureReady = false;
+      renderScene();
+      return;
+    }
+    state.currentScene = 0;
+    captureReady = false;
+    renderTitle();
+  } finally {
+    recovering = false;
+  }
+}
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+function onClick(event) {
+  const button = event.target.closest("[data-action]");
+  if (!button || button.disabled) return;
+  if (keyIsRepeating && event.detail === 0) return;
+  const action = button.dataset.action;
+  try {
+    if (action === "begin") startGame();
+    else if (action === "choice") makeChoice(button.dataset.choice);
+    else if (action === "continue") continueWalk();
+    else if (action === "restart") restartGame();
+    else if (action === "open-photo") openPhoto(Number(button.dataset.index));
+    else if (action === "photo-prev") stepPhoto(-1);
+    else if (action === "photo-next") stepPhoto(1);
+    else if (action === "close-photo") closeLightbox();
+    else if (action === "secret") pokeSecret();
+    else if (action === "mute") toggleSound();
+  } catch (error) {
+    recover();
+  }
+}
+
+document.addEventListener("click", onClick);
+
+document.addEventListener("keydown", function (event) {
+  if (event.repeat) keyIsRepeating = true;
+  if (event.key === "Escape" && dom.lightbox.open) {
+    setTimeout(closeLightbox, 0);
+  }
+  if (!dom.lightbox.open) return;
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    stepPhoto(1);
+  }
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    stepPhoto(-1);
+  }
+});
+
+document.addEventListener("keyup", function () {
+  keyIsRepeating = false;
+});
+
+window.addEventListener("blur", function () {
+  keyIsRepeating = false;
+});
+
+dom.lightbox.addEventListener("click", function (event) {
+  if (event.target === dom.lightbox) closeLightbox();
+});
+
+dom.lightbox.addEventListener("close", function () {
+  setPageLocked(false);
+});
+
+applyTheme();
+syncMuteButton();
+renderTitle();
+</script>
+</body>
+</html>

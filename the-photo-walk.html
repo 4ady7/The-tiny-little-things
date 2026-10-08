@@ -12,6 +12,8 @@
     --parchment: #f3eadc;
     --cream: #fbf7ef;
     --ink: #2a2622;
+    --ink-soft: #5e564c;
+    --line: rgba(42, 38, 34, 0.16);
     --ink-soft: color-mix(in srgb, var(--ink) 58%, var(--parchment));
     --line: color-mix(in srgb, var(--ink) 16%, transparent);
     --sage: #6d7c66;
@@ -30,7 +32,9 @@
 
   *, *::before, *::after { box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; }
+  html {
+    scroll-behavior: smooth;
+  }
 
   body {
     margin: 0;
@@ -45,7 +49,10 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    touch-action: manipulation;
   }
+
+  body.is-modal { overflow: hidden; }
 
   body::before {
     content: "";
@@ -111,7 +118,8 @@
   .dots span {
     width: 9px;
     height: 13px;
-    border: 1px solid color-mix(in srgb, var(--ink) 32%, transparent);
+    border: 1px solid rgba(42, 38, 34, 0.32);
+    border-color: color-mix(in srgb, var(--ink) 32%, transparent);
     border-radius: 1px;
     background: transparent;
   }
@@ -312,7 +320,7 @@
   .choice:hover,
   .choice:focus-visible {
     background: rgba(255, 252, 246, 0.72);
-    border-color: color-mix(in srgb, var(--ink) 28%, transparent);
+    border-color: rgba(42, 38, 34, 0.28);
     border-left-color: var(--moss);
   }
 
@@ -330,7 +338,7 @@
     font-size: 16px;
   }
 
-  .btn:hover { background: color-mix(in srgb, var(--moss) 82%, black); }
+  .btn:hover { background: #314032; }
 
   .btn-ghost {
     background: transparent;
@@ -452,6 +460,7 @@
     font-size: clamp(30px, 5vw, 42px);
     letter-spacing: -0.025em;
     line-height: 1.05;
+    overflow-wrap: break-word;
   }
 
   .capture-caption {
@@ -555,6 +564,8 @@
     box-shadow: 0 18px 38px rgba(42, 38, 34, 0.12);
   }
 
+  #view-title, #passage, #lb-title { scroll-margin-top: 76px; }
+
   .ph-title {
     display: block;
     margin-top: 10px;
@@ -562,6 +573,7 @@
     font-size: 1.35rem;
     letter-spacing: -0.02em;
     line-height: 1.15;
+    overflow-wrap: break-word;
   }
 
   .ph-meta, .lb-meta {
@@ -582,6 +594,7 @@
     font-weight: 400;
     letter-spacing: 0;
     text-transform: none;
+    overflow-wrap: break-word;
   }
 
   .reflection {
@@ -631,6 +644,7 @@
     font-size: clamp(1.25rem, 3vw, 1.55rem);
     line-height: 1.4;
     color: #3a322b;
+    overflow-wrap: break-word;
   }
 
   .note p + p { margin-top: 0.75em; }
@@ -652,8 +666,10 @@
   #lightbox {
     border: 0;
     padding: 0;
+    margin: auto;
     background: transparent;
-    width: min(640px, calc(100vw - 24px));
+    width: min(640px, calc(100% - 24px));
+    max-width: calc(100% - 24px);
     max-height: calc(100vh - 24px);
     max-height: calc(100dvh - 24px);
     overflow: auto;
@@ -771,6 +787,12 @@
   @media (max-width: 390px) {
     .dots { display: none; }
     .wrap { width: min(var(--page), calc(100% - 22px)); }
+    .photo-card, .note { transform: none; }
+  }
+
+  @media (max-width: 360px) {
+    .roll, .count, .util-btn { letter-spacing: 0.06em; }
+    .top-actions { gap: 6px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -799,7 +821,7 @@
       </div>
     </div>
   </header>
-  <main id="main" class="wrap"></main>
+  <main id="main" class="wrap" tabindex="-1"></main>
   <dialog id="lightbox" aria-label="Photograph"></dialog>
   <noscript>
     <p class="wrap prose">The Photo Walk needs JavaScript to open. It is still just the one file.</p>
@@ -1211,9 +1233,13 @@ const state = {
 };
 
 let phase = "title";
-let lockUntil = 0;
+let heldUntil = 0;
+let captureReady = false;
+let recovering = false;
+let keyIsRepeating = false;
 let timers = [];
 let lightboxIndex = 0;
+const INPUT_HOLD = 520;
 
 /* ============================================================
    DOM REFERENCES
@@ -1246,14 +1272,18 @@ function clearTimers() {
   timers = [];
 }
 
-function gate() {
-  const now = Date.now();
-  if (now < lockUntil) return false;
-  lockUntil = now + 380;
-  return true;
+function holdInput(ms) {
+  const until = Date.now() + ms;
+  if (until > heldUntil) heldUntil = until;
+}
+
+function inputOpen() {
+  return Date.now() >= heldUntil;
 }
 
 function escapeHtml(value) {
+  if (value == null) return "";
+  if (typeof value !== "string" && typeof value !== "number") return "";
   return String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -1330,9 +1360,36 @@ function updateChrome() {
   });
 }
 
-function focusNode(id) {
+function focusNode(id, visible) {
   const node = document.getElementById(id);
-  if (node) node.focus();
+  if (!node) return;
+  try {
+    node.focus(visible ? { focusVisible: true } : undefined);
+  } catch (error) {
+    node.focus();
+  }
+}
+
+function currentSceneId() {
+  const scene = sceneByIndex(state.currentScene);
+  return scene && scene.id ? scene.id : "path";
+}
+
+function resetTraits() {
+  state.traits.curiosity = 0;
+  state.traits.nature = 0;
+  state.traits.detail = 0;
+  state.traits.stillness = 0;
+  state.traits.adventure = 0;
+}
+
+function setPageLocked(locked) {
+  document.body.classList.toggle("is-modal", locked);
+}
+
+function closeLightbox() {
+  if (dom.lightbox.open) dom.lightbox.close();
+  setPageLocked(false);
 }
 
 /* ============================================================
@@ -1965,12 +2022,19 @@ function toggleSound() {
       syncMuteButton();
       return;
     }
-    audio.ctx.resume();
+    audio.ctx.resume().catch(function () {});
     fadeMaster(0.28);
-    const kinds = { title: "title", scene: sceneByIndex(state.currentScene).id, capture: sceneByIndex(state.currentScene).id, gallery: "hill" };
+    const sceneId = currentSceneId();
+    const kinds = { title: "title", scene: sceneId, capture: sceneId, gallery: "hill" };
     setAmbience(kinds[phase] || "title");
-  } else if (audio.master) {
+  } else if (audio.ctx) {
     fadeMaster(0);
+    const ctx = audio.ctx;
+    setTimeout(function () {
+      if (audio.muted && audio.ctx === ctx) {
+        ctx.suspend().catch(function () {});
+      }
+    }, 700);
   }
   syncMuteButton();
 }
@@ -2006,8 +2070,14 @@ function sceneCopy(scene) {
 
 function renderScene() {
   phase = "scene";
+  captureReady = false;
   clearTimers();
   const scene = sceneByIndex(state.currentScene);
+  if (!scene) {
+    state.currentScene = 0;
+    renderTitle();
+    return;
+  }
   updateChrome();
   setAmbience(scene.id);
   const copy = sceneCopy(scene);
@@ -2037,8 +2107,13 @@ function renderChoices(scene) {
 }
 
 function renderCapture(choice, photo) {
-  phase = "capture";
   const scene = sceneByIndex(state.currentScene);
+  if (!scene || !choice || !photo) {
+    recover();
+    return;
+  }
+  phase = "capture";
+  captureReady = false;
   updateChrome();
   const kicker = choice.quiet ? "A quiet frame" : "Photograph added";
   const nextLabel = state.currentScene >= SCENES.length - 1 ? "See your walk" : "Keep walking";
@@ -2073,17 +2148,20 @@ function renderCapture(choice, photo) {
    CHOICE HANDLING
    ============================================================ */
 function addTraits(traits) {
-  Object.keys(traits).forEach(function (key) {
-    state.traits[key] += traits[key];
+  Object.keys(traits || {}).forEach(function (key) {
+    const amount = traits[key];
+    if (typeof state.traits[key] !== "number") return;
+    if (typeof amount !== "number" || !isFinite(amount)) return;
+    state.traits[key] += amount;
   });
 }
 
 function makeChoice(choiceId) {
-  if (phase !== "scene") return;
-  if (!gate()) return;
+  if (phase !== "scene" || !inputOpen()) return;
   const scene = sceneByIndex(state.currentScene);
-  const choice = choiceById(scene, choiceId);
-  if (!choice) return;
+  const choice = scene && choiceById(scene, choiceId);
+  if (!choice || !choice.photo) return;
+  holdInput(INPUT_HOLD);
   addTraits(choice.traits || {});
   state.choices.push(choice.id);
   const photo = capturePhoto(choice);
@@ -2112,9 +2190,10 @@ function addToGallery(photo) {
 }
 
 function continueWalk() {
-  if (phase !== "capture") return;
-  if (!gate()) return;
+  if (phase !== "capture" || !captureReady || !inputOpen()) return;
+  holdInput(INPUT_HOLD);
   clearTimers();
+  captureReady = false;
   if (state.currentScene >= SCENES.length - 1) {
     renderGallery();
     return;
@@ -2124,9 +2203,17 @@ function continueWalk() {
 }
 
 function startGame() {
-  if (!gate()) return;
+  if (phase !== "title" || !inputOpen()) return;
+  holdInput(INPUT_HOLD);
   clearTimers();
   state.currentScene = 0;
+  state.photos = [];
+  state.choices = [];
+  resetTraits();
+  state.secretClicks = 0;
+  state.secretFound = false;
+  captureReady = false;
+  lightboxIndex = 0;
   renderScene();
 }
 
@@ -2189,16 +2276,27 @@ function personalNote() {
 }
 
 function openPhoto(index) {
-  if (!state.photos[index]) return;
+  if (phase !== "gallery" || !inputOpen()) return;
+  const photo = state.photos[index];
+  if (!photo || !isFinite(index)) return;
   lightboxIndex = index;
   paintLightbox();
-  if (!dom.lightbox.open) dom.lightbox.showModal();
-  focusNode("lb-title");
+  if (dom.lightbox.open) return;
+  setPageLocked(true);
+  try {
+    dom.lightbox.showModal();
+  } catch (error) {
+    setPageLocked(false);
+    return;
+  }
+  focusNode("lb-title", true);
 }
 
 function paintLightbox() {
   const photo = state.photos[lightboxIndex];
+  if (!photo) return;
   const last = state.photos.length - 1;
+  dom.lightbox.setAttribute("aria-labelledby", "lb-title");
   dom.lightbox.innerHTML =
     "<article class=\"lb-card\">" +
       "<div class=\"lb-top\">" +
@@ -2217,11 +2315,12 @@ function paintLightbox() {
 }
 
 function stepPhoto(direction) {
+  if (!dom.lightbox.open) return;
   const next = lightboxIndex + direction;
   if (next < 0 || next >= state.photos.length) return;
   lightboxIndex = next;
   paintLightbox();
-  focusNode("lb-title");
+  focusNode("lb-title", true);
 }
 
 function pokeSecret() {
@@ -2256,8 +2355,8 @@ function generateReflection() {
 
   const top = scores[0];
   const second = scores[1];
-  let chosen = REFLECTIONS[top.key];
-  if (second && second.value > 0 && top.value - second.value <= 1) {
+  let chosen = top && REFLECTIONS[top.key] ? REFLECTIONS[top.key] : REFLECTIONS.detail;
+  if (top && second && second.value > 0 && top.value - second.value <= 1) {
     const key = [top.key, second.key].sort().join("+");
     if (COMBOS[key]) chosen = COMBOS[key];
   }
@@ -2265,15 +2364,15 @@ function generateReflection() {
   const phrases = state.choices.map(function (id) {
     for (let i = 0; i < SCENES.length; i += 1) {
       const match = choiceById(SCENES[i], id);
-      if (match) return match.summary;
+      if (match && match.summary) return match.summary;
     }
     return "";
   }).filter(Boolean);
 
   return {
-    title: chosen.title,
-    line: chosen.line,
-    summary: "You " + joinList(phrases) + "."
+    title: chosen && chosen.title ? chosen.title : "The walk",
+    line: chosen && chosen.line ? chosen.line : "You noticed what the afternoon was willing to show you.",
+    summary: phrases.length ? "You " + joinList(phrases) + "." : "You took the walk."
   };
 }
 
@@ -2290,13 +2389,18 @@ function playCapture(kicker, title) {
   focusNode("passage");
 
   function finish() {
-    if (phase !== "capture" || !root) return;
-    finder.classList.add("is-developed");
+    if (phase !== "capture" || !root || !root.isConnected) return;
+    captureReady = true;
+    if (finder) finder.classList.add("is-developed");
     root.classList.add("is-ready");
     if (heading) heading.removeAttribute("aria-hidden");
     if (label) label.textContent = kicker;
     if (live) live.textContent = kicker + ". " + title + ".";
     if (button) button.hidden = false;
+    const active = document.activeElement;
+    if (button && (!active || active === document.body || root.contains(active))) {
+      focusNode("continueBtn", true);
+    }
   }
 
   if (prefersReduced()) {
@@ -2323,22 +2427,55 @@ function playCapture(kicker, title) {
    RESET / REPLAY
    ============================================================ */
 function restartGame() {
-  if (!gate()) return;
+  if (phase !== "gallery" || !inputOpen()) return;
+  holdInput(INPUT_HOLD);
   clearTimers();
   const nextWalk = state.walk + 1;
   state.currentScene = 0;
   state.photos = [];
   state.choices = [];
-  state.traits.curiosity = 0;
-  state.traits.nature = 0;
-  state.traits.detail = 0;
-  state.traits.stillness = 0;
-  state.traits.adventure = 0;
+  resetTraits();
   state.walk = nextWalk;
   state.secretClicks = 0;
   state.secretFound = false;
-  if (dom.lightbox.open) dom.lightbox.close();
+  captureReady = false;
+  lightboxIndex = 0;
+  closeLightbox();
   renderScene();
+}
+
+function recover() {
+  if (recovering) return;
+  recovering = true;
+  try {
+    clearTimers();
+    heldUntil = 0;
+    closeLightbox();
+    if (state.photos.length >= SCENES.length) {
+      captureReady = true;
+      renderGallery();
+      return;
+    }
+    const scene = sceneByIndex(state.currentScene);
+    if (scene && state.photos.length === state.currentScene + 1) {
+      const choice = choiceById(scene, state.choices[state.currentScene]);
+      const photo = state.photos[state.currentScene];
+      if (choice && photo) {
+        renderCapture(choice, photo);
+        return;
+      }
+    }
+    if (scene && state.photos.length === state.currentScene) {
+      captureReady = false;
+      renderScene();
+      return;
+    }
+    state.currentScene = 0;
+    captureReady = false;
+    renderTitle();
+  } finally {
+    recovering = false;
+  }
 }
 
 /* ============================================================
@@ -2347,22 +2484,31 @@ function restartGame() {
 function onClick(event) {
   const button = event.target.closest("[data-action]");
   if (!button || button.disabled) return;
+  if (keyIsRepeating && event.detail === 0) return;
   const action = button.dataset.action;
-  if (action === "begin") startGame();
-  else if (action === "choice") makeChoice(button.dataset.choice);
-  else if (action === "continue") continueWalk();
-  else if (action === "restart") restartGame();
-  else if (action === "open-photo") openPhoto(Number(button.dataset.index));
-  else if (action === "photo-prev") stepPhoto(-1);
-  else if (action === "photo-next") stepPhoto(1);
-  else if (action === "close-photo") dom.lightbox.close();
-  else if (action === "secret") pokeSecret();
-  else if (action === "mute") toggleSound();
+  try {
+    if (action === "begin") startGame();
+    else if (action === "choice") makeChoice(button.dataset.choice);
+    else if (action === "continue") continueWalk();
+    else if (action === "restart") restartGame();
+    else if (action === "open-photo") openPhoto(Number(button.dataset.index));
+    else if (action === "photo-prev") stepPhoto(-1);
+    else if (action === "photo-next") stepPhoto(1);
+    else if (action === "close-photo") closeLightbox();
+    else if (action === "secret") pokeSecret();
+    else if (action === "mute") toggleSound();
+  } catch (error) {
+    recover();
+  }
 }
 
 document.addEventListener("click", onClick);
 
 document.addEventListener("keydown", function (event) {
+  if (event.repeat) keyIsRepeating = true;
+  if (event.key === "Escape" && dom.lightbox.open) {
+    setTimeout(closeLightbox, 0);
+  }
   if (!dom.lightbox.open) return;
   if (event.key === "ArrowRight") {
     event.preventDefault();
@@ -2374,8 +2520,20 @@ document.addEventListener("keydown", function (event) {
   }
 });
 
+document.addEventListener("keyup", function () {
+  keyIsRepeating = false;
+});
+
+window.addEventListener("blur", function () {
+  keyIsRepeating = false;
+});
+
 dom.lightbox.addEventListener("click", function (event) {
-  if (event.target === dom.lightbox) dom.lightbox.close();
+  if (event.target === dom.lightbox) closeLightbox();
+});
+
+dom.lightbox.addEventListener("close", function () {
+  setPageLocked(false);
 });
 
 applyTheme();
